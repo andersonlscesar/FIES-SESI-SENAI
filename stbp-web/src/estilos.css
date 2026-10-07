@@ -1,0 +1,116 @@
+/*
+ * Tokens e ajustes globais do STBP (temas claro e escuro). Ver docs/design.md.
+ * O Mantine marca o tema ativo em <html data-mantine-color-scheme="light|dark">.
+ */
+:root {
+  /* Fundo da área de trabalho (um tom abaixo das superfícies/cartões) */
+  --stbp-fundo: #f4f5f7;
+  /* Menu lateral: grafite-marinho quase preto, indicador neutro */
+  --stbp-lateral-fundo: #0d1520;
+  --stbp-lateral-borda: #0d1520;
+  --stbp-lateral-texto: #aeb8c6;
+  --stbp-lateral-texto-fraco: #6b7787;
+  --stbp-lateral-ativo-fundo: rgba(255, 255, 255, 0.06);
+  --stbp-lateral-ativo-destaque: #e8ecf1;
+  /* Cabeçalho de tabelas */
+  --stbp-th-fundo: #f7f8fa;
+  /* Dados em gráficos: marinho com croma suficiente para não ser lido como cinza (validado; ver docs/design.md) */
+  --stbp-dado: #2c5a96;
+  --stbp-dado-trilho: #e9edf2;
+  /* Marcador de imagem ausente */
+  --stbp-placeholder-fundo: #e6eaf0;
+  --stbp-placeholder-icone: #9aa6b6;
+  /* Linha divisória sutil e barras de rolagem */
+  --stbp-borda: #dfe3e8;
+  --stbp-rolagem: #c3cad4;
+}
+
+:root[data-mantine-color-scheme='dark'] {
+  --stbp-fundo: #0f1319;
+  --stbp-lateral-fundo: #0a0d12;
+  --stbp-th-fundo: #161b23;
+  --stbp-dado: #5a86c4;
+  --stbp-dado-trilho: #222833;
+  --stbp-lateral-borda: #222833;
+  --stbp-placeholder-fundo: #222833;
+  --stbp-placeholder-icone: #4f596a;
+  --stbp-borda: #2b323e;
+  --stbp-rolagem: #3b4352;
+}
+
+body {
+  background: var(--stbp-fundo);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Números de documento (nº do termo, patrimônio): monoespaçados e alinhados */
+.stbp-numero {
+  font-family: var(--mantine-font-family-monospace);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Tabelas: cabeçalho discreto em caixa alta, números tabulares */
+.stbp-tabela {
+  font-variant-numeric: tabular-nums;
+}
+.stbp-th {
+  background: var(--stbp-th-fundo);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mantine-color-dimmed);
+  white-space: nowrap;
+}
+
+/* Rótulo pequeno acima de títulos e campos ("sobretítulo") */
+.stbp-sobretitulo {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mantine-color-dimmed);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--stbp-rolagem) transparent;
+}
+
+/* Marcador de categoria/situação: quadrado colorido + texto em tom normal (ver Marcador.tsx) */
+.stbp-marcador {
+  --stbp-marcador-cor: var(--stbp-marcador-cor-claro);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.stbp-marcador::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  background: var(--stbp-marcador-cor);
+}
+:root[data-mantine-color-scheme='dark'] .stbp-marcador {
+  --stbp-marcador-cor: var(--stbp-marcador-cor-escuro);
+}
+.stbp-marcador[data-contorno='true']::before {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--stbp-marcador-cor);
+}
+
+/* Etiqueta neutra (ex.: instituições de uma unidade) */
+.stbp-etiqueta {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--stbp-borda);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}

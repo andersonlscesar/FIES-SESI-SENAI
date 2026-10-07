@@ -1,0 +1,13 @@
+# Acrescentado ao compose principal (dev ou produção) apenas durante a migração, pelo migrar.sh.
+services:
+  mysql-legado:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: legado
+    volumes:
+      - ${LEGADO_DUMP:?informe o dump}:/docker-entrypoint-initdb.d/dump.sql:ro
+    healthcheck:
+      test: ["CMD", "mysql", "-uroot", "-plegado", "-e", "SELECT 1 FROM stbp.itens LIMIT 1"]
+      interval: 3s
+      retries: 100

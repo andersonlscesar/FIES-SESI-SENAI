@@ -1,0 +1,25 @@
+{
+  // Configurações de execução do VS Code (painel "Executar e Depurar", Ctrl+Shift+D).
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "STBP API (dev)",
+      "request": "launch",
+      "mainClass": "br.org.fies.stbp.StbpApiApplication",
+      "projectName": "stbp-api",
+      "cwd": "${workspaceFolder}/stbp-api",
+      // Perfil dev: segredo JWT de desenvolvimento e banco local (docker compose up -d postgres, porta 5433)
+      "env": { "SPRING_PROFILES_ACTIVE": "dev" }
+    },
+    {
+      "type": "java",
+      "name": "STBP API (dev, banco descartável)",
+      "request": "launch",
+      "mainClass": "br.org.fies.stbp.TestStbpApiApplication",
+      "projectName": "stbp-api",
+      "cwd": "${workspaceFolder}/stbp-api"
+      // Sobe um Postgres vazio via Testcontainers (só com as migrações, sem os dados migrados)
+    }
+  ]
+}

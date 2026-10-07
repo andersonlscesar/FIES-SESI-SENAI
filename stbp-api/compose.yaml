@@ -1,0 +1,22 @@
+# Ambiente de DESENVOLVIMENTO: só o Postgres (a API roda com ./mvnw spring-boot:run).
+# Produção: ../implantacao/compose.yaml
+name: stbp
+
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: stbp
+      POSTGRES_USER: stbp
+      POSTGRES_PASSWORD: stbp
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stbp -d stbp"]
+      interval: 3s
+      retries: 20
+
+volumes:
+  pgdata:

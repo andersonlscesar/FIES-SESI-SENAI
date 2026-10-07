@@ -1,0 +1,45 @@
+# PRODUÇÃO: Postgres + API + frontend (nginx). Guia completo: README.md desta pasta.
+#   cp .env.exemplo .env   (e preencha)
+#   docker compose up -d --build
+name: ${STBP_PROJETO:-stbp}
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${STBP_DB_NOME:-stbp}
+      POSTGRES_USER: ${STBP_DB_USUARIO:?defina STBP_DB_USUARIO no .env}
+      POSTGRES_PASSWORD: ${STBP_DB_SENHA:?defina STBP_DB_SENHA no .env}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      retries: 20
+
+  api:
+    build: ../stbp-api
+    image: stbp-api:${STBP_VERSAO:-latest}
+    restart: unless-stopped
+    environment:
+      STBP_DB_URL: jdbc:postgresql://postgres:5432/${STBP_DB_NOME:-stbp}
+      STBP_DB_USUARIO: ${STBP_DB_USUARIO}
+      STBP_DB_SENHA: ${STBP_DB_SENHA}
+      STBP_JWT_SEGREDO: ${STBP_JWT_SEGREDO:?defina STBP_JWT_SEGREDO no .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build: ../stbp-web
+    image: stbp-web:${STBP_VERSAO:-latest}
+    restart: unless-stopped
+    ports:
+      - "${STBP_PORTA:-80}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:

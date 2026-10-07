@@ -1,0 +1,103 @@
+/* Painel de análise: indicadores, listas de barras e cartões de seção. Ver docs/design.md § Painel. */
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.cartaoCabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--stbp-borda);
+}
+
+.cartaoCorpo {
+  padding: 16px;
+  flex-grow: 1;
+}
+
+/* Indicador (stat tile) */
+.indicadorRotulo {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--mantine-color-dimmed);
+}
+
+.indicadorValor {
+  margin-top: 6px;
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.indicadorComplemento {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--mantine-color-dimmed);
+}
+
+/* Lista de barras horizontais: rótulo | barra | valor (todos os valores visíveis, sem depender de tooltip) */
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.linha {
+  display: grid;
+  grid-template-columns: minmax(0, 42%) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.rotuloLinha {
+  font-size: 0.8125rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trilho {
+  height: 10px;
+  background: var(--stbp-dado-trilho);
+}
+
+.barra {
+  height: 100%;
+  background: var(--stbp-dado);
+  /* data-end levemente arredondado; base reta */
+  border-radius: 0 2px 2px 0;
+  min-width: 2px;
+  transition: width 200ms ease;
+}
+
+.valor {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.percentual {
+  margin-left: 6px;
+  font-weight: 400;
+  color: var(--mantine-color-dimmed);
+}
+
+/* Enquanto recarrega, mantém o quadro anterior esmaecido (sem esqueleto nem salto de layout) */
+.recarregando {
+  opacity: 0.55;
+  transition: opacity 150ms ease;
+}

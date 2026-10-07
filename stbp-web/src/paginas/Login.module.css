@@ -1,0 +1,98 @@
+.tela {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  min-height: 100vh;
+  background: var(--mantine-color-body);
+}
+
+@media (max-width: 62em) {
+  .tela {
+    grid-template-columns: 1fr;
+  }
+  .painel {
+    display: none;
+  }
+}
+
+/* Painel institucional à esquerda */
+.painel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px 56px;
+  color: #d5dce6;
+  background-color: #0d1520;
+  border-top: 3px solid #2b4466;
+  overflow: hidden;
+}
+
+:root[data-mantine-color-scheme='dark'] .painel {
+  background-color: #0a0d12;
+  border-right: 1px solid #222833;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+
+.marcaSimbolo {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.titulo {
+  max-width: 440px;
+  color: #fff;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.texto {
+  max-width: 420px;
+  margin-top: 16px;
+  color: #9fb0c6;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.aviso {
+  max-width: 420px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: #8593a6;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.instituicoes {
+  color: #7d8a9c;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Formulário à direita */
+.lado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+}
+
+.formulario {
+  width: 100%;
+  max-width: 380px;
+}

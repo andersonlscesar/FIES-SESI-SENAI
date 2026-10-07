@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./migracao/migrar.sh)",
+      "Bash(grep -vE \"Pulling|Download|Extract|Verifying|Waiting|Pull complete|Already exists|^\\\\s*$|Container|Network|Volume|Image\")"
+    ]
+  }
+}

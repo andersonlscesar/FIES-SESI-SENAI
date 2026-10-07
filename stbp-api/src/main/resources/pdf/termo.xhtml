@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Termo de Transferência de Bens Patrimoniais (formulário FM-008-SCI-04), A4 retrato.
+  Reproduz o layout do sistema antigo (resources/views/pdf/*.blade.php). Cabeçalho e rodapé se repetem em cada página.
+  A versão paisagem (2 vias por folha) é montada a partir deste PDF; ver TermoPdf.
+  Template Thymeleaf em modo XML: use &#160; em vez de &nbsp;.
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <title th:text="${termo.titulo}">Termo</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 112mm 10mm 51mm 10mm;
+            @top-center { content: element(cabecalho); vertical-align: top; padding-top: 5mm; }
+            @bottom-center { content: element(rodape); vertical-align: bottom; padding-bottom: 6mm; }
+        }
+        body { font-family: Carlito, sans-serif; font-size: 9pt; color: #000; margin: 0; }
+        #cabecalho { position: running(cabecalho); width: 190mm; }
+        #rodape { position: running(rodape); width: 190mm; }
+        table { border-collapse: collapse; }
+        th { text-align: center; }
+        .negrito { font-weight: bold; }
+        .centro { text-align: center; }
+
+        /* Logo + título */
+        .titulo { width: 100%; border: 1px solid #000; }
+        .titulo td { border: 1px solid #000; }
+        .titulo .logo { width: 62mm; height: 20mm; text-align: center; vertical-align: middle; }
+        .titulo .logo img { max-height: 15mm; max-width: 50mm; }
+        .titulo .texto { font-size: 13.5pt; font-weight: bold; text-align: center; }
+
+        /* Remetente / destinatário */
+        .partes { width: 100%; margin-top: 3mm; }
+        .partes th { width: 89mm; font-size: 9pt; background-color: #eee; border: 1px solid #232323; }
+        .partes td.campo { font-size: 9pt; font-weight: bold; border: 1px solid #232323; padding: 1.8mm 1mm; }
+        .partes .vao { width: 12mm; border: none; background: none; }
+
+        /* Assinatura do portador */
+        .assinatura { width: 80mm; margin: 12mm auto 0 auto; border-top: 1px solid #000; text-align: center;
+                      font-size: 7pt; }
+
+        /* Motivo */
+        .motivo-titulo { margin: 4mm 0 2.5mm 0; text-align: center; font-size: 9pt; font-weight: bold; }
+        .motivos { width: 100%; }
+        .motivos > tbody > tr > td { width: 50%; vertical-align: top; }
+        .quadro { width: 100%; border: 1px solid #000; font-size: 9pt; }
+        .quadro th { background-color: #eee; border-bottom: 1px solid #000; text-align: center; }
+        .quadro td { text-align: center; padding: 0.6mm 0; }
+        .quadro td.marca { width: 22mm; border-right: 1px solid #000; white-space: pre; }
+        .quadro tr.primeira td { border-bottom: 1px solid #000; }
+
+        /* Itens */
+        .itens { width: 100%; border: 1px solid #000; -fs-table-paginate: paginate; }
+        .itens th { background-color: #E7E6E6; border: 1px solid #000; font-size: 9pt; }
+        .itens td { border: 1px solid #000; font-size: 9pt; text-align: center; padding: 0.8mm 1mm;
+                    white-space: pre-line; }
+        .itens tr { page-break-inside: avoid; }
+        .itens .col-item { width: 12mm; }
+        .itens .col-patrimonio { width: 30mm; }
+
+        /* Rodapé */
+        .aviso { font-size: 9pt; margin: 0 0 3mm 0; text-align: justify; }
+        .movimentacao { width: 100%; border: 1px solid #000; }
+        .movimentacao th.faixa { background-color: #E7E6E6; border-bottom: 1px solid #000; font-size: 9pt; }
+        .movimentacao td.linha { padding: 9mm 8mm 0 8mm; }
+        .movimentacao td.linha div { border-top: 1px solid #000; }
+        .movimentacao .rotulo { font-size: 8pt; font-weight: bold; text-align: center; }
+        .movimentacao .sub { font-size: 8pt; text-align: center; padding-bottom: 3mm; }
+        .identificacao { font-size: 8pt; margin-top: 1mm; }
+        .identificacao .pagina { float: right; }
+        .identificacao .pagina::after { content: "Termo nº " attr(data-numero) " · página " counter(page) " de " counter(pages); }
+    </style>
+</head>
+<body>
+
+<div id="cabecalho">
+    <table class="titulo">
+        <tr>
+            <td class="logo">
+                <img th:if="${termo.logo != null}" th:src="${termo.logo}" th:alt="${termo.instituicao}" alt=""/>
+                <span th:if="${termo.logo == null}" class="negrito" th:text="${termo.instituicao}">SESI</span>
+            </td>
+            <td class="texto">TERMO DE TRANSFERÊNCIA DE BENS PATRIMONIAIS</td>
+        </tr>
+    </table>
+
+    <table class="partes">
+        <thead>
+            <tr><th>REMETENTE</th><th class="vao"></th><th>DESTINATÁRIO</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="campo" th:text="'DE: ' + ${termo.origem}">DE:</td>
+                <td class="vao"></td>
+                <td class="campo" th:text="'PARA: ' + ${termo.destino}">PARA:</td>
+            </tr>
+            <tr>
+                <td class="campo" th:text="'RESPONSÁVEL: ' + ${termo.responsavelEnvio}">RESPONSÁVEL:</td>
+                <td class="vao"></td>
+                <td class="campo" th:text="'RESPONSÁVEL: ' + ${termo.responsavelRecebimento}">RESPONSÁVEL:</td>
+            </tr>
+            <tr>
+                <td class="campo" th:text="'DATA: ' + ${termo.data}">DATA:</td>
+                <td class="vao"></td>
+                <td class="campo" th:text="'DATA: ' + ${termo.data}">DATA:</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="assinatura">
+        <div class="negrito">PORTADOR DO EQUIPAMENTO</div>
+        <div>ASSINATURA</div>
+    </div>
+
+    <div class="motivo-titulo">MOTIVO PARA TRANSFERÊNCIA</div>
+    <table class="motivos">
+        <tr>
+            <td style="padding-right: 3mm;">
+                <table class="quadro">
+                    <tr><th colspan="2">DEFINITIVA</th></tr>
+                    <tr class="primeira">
+                        <td class="marca" th:text="${termo.marca('BAIXA_DESCARTE')}">(   )</td>
+                        <td>BAIXA/DESCARTE</td>
+                    </tr>
+                    <tr>
+                        <td class="marca" th:text="${termo.marca('TRANSFERENCIA_ENTRE_FILIAIS')}">(   )</td>
+                        <td>TRANSFERÊNCIA ENTRE FILIAIS</td>
+                    </tr>
+                </table>
+            </td>
+            <td style="padding-left: 3mm;">
+                <table class="quadro">
+                    <tr><th colspan="2">TEMPORÁRIA</th></tr>
+                    <tr class="primeira">
+                        <td class="marca" th:text="${termo.marca('EMPRESTIMO_TEMPORARIO')}">(   )</td>
+                        <td>EMPRÉSTIMO TEMPORÁRIO</td>
+                    </tr>
+                    <tr>
+                        <td class="marca" th:text="${termo.marca('MANUTENCAO')}">(   )</td>
+                        <td>MANUTENÇÃO</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div id="rodape">
+    <p class="aviso">Comunicamos que nesta data passam a ser de sua responsabilidade os bens patrimoniais acima
+        relacionados. Solicitamos proceder à conferência dos mesmos, devolvendo a 2ª via devidamente assinada e
+        encaminhando a 3ª via para a área de Patrimônio.</p>
+    <table class="movimentacao">
+        <tr><th class="faixa" colspan="3">MOVIMENTAÇÃO NO SISTEMA DE ATIVO FIXO</th></tr>
+        <tr>
+            <td class="linha"><div></div></td>
+            <td class="linha"><div></div></td>
+            <td class="linha"><div></div></td>
+        </tr>
+        <tr>
+            <td class="rotulo">ÁREA EMISSORA</td>
+            <td class="rotulo">ÁREA RECEPTORA</td>
+            <td class="rotulo">SETOR DE PATRIMÔNIO</td>
+        </tr>
+        <tr>
+            <td class="sub">CARIMBO E ASSINATURA</td>
+            <td class="sub">CARIMBO E ASSINATURA</td>
+            <td class="sub">CARIMBO E ASSINATURA</td>
+        </tr>
+    </table>
+    <div class="identificacao">
+        <span class="pagina" th:attr="data-numero=${termo.numero}"></span>
+        FM-008-SCI-04
+    </div>
+</div>
+
+<table class="itens">
+    <thead>
+        <tr>
+            <th class="col-item">ITEM</th>
+            <th>DESCRIÇÃO DO BEM</th>
+            <th class="col-patrimonio">PATRIMÔNIO</th>
+            <th>OBSERVAÇÃO</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="item : ${termo.itens}">
+            <td th:text="${item.ordem}">1</td>
+            <td th:text="${item.descricao}">Notebook</td>
+            <td th:text="${item.patrimonio}">S/P</td>
+            <td th:text="${item.observacao}"></td>
+        </tr>
+    </tbody>
+</table>
+
+</body>
+</html>

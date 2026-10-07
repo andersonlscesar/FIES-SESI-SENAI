@@ -1,0 +1,98 @@
+.lateral {
+  background: var(--stbp-lateral-fundo);
+  border-right: 1px solid var(--stbp-lateral-borda);
+  color: var(--stbp-lateral-texto);
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 64px;
+  padding: 0 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.marcaSimbolo {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  font-family: var(--mantine-font-family-monospace);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: -0.02em;
+}
+
+.marcaNome {
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.1;
+  letter-spacing: 0.12em;
+}
+
+.marcaDescricao {
+  color: var(--stbp-lateral-texto-fraco);
+  font-size: 11.5px;
+  line-height: 1.2;
+}
+
+.secao {
+  padding: 18px 18px 6px;
+  color: var(--stbp-lateral-texto-fraco);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 36px;
+  padding: 0 18px 0 16px;
+  border-left: 2px solid transparent;
+  color: var(--stbp-lateral-texto);
+  font-size: 14px;
+  text-decoration: none;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.link:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+}
+
+.link[data-ativo='true'] {
+  background: var(--stbp-lateral-ativo-fundo);
+  border-left-color: var(--stbp-lateral-ativo-destaque);
+  color: #fff;
+  font-weight: 500;
+}
+
+.rodapeLateral {
+  margin-top: auto;
+  padding: 14px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--stbp-lateral-texto-fraco);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.cabecalho {
+  border-bottom: 1px solid var(--stbp-borda);
+}
+
+.principal {
+  background: var(--stbp-fundo);
+}
+
+.conteudo {
+  max-width: 1440px;
+  margin: 0 auto;
+}
