@@ -133,7 +133,7 @@ export function Layout() {
               <Menu.Target>
                 <UnstyledButton aria-label="Menu do usuário" px={6} py={4}>
                   <Group gap={10} wrap="nowrap">
-                    <Avatar size={32} color="marinho" variant="filled">
+                    <Avatar size={32} color="azul" variant="filled">
                       {iniciais(usuario?.nome)}
                     </Avatar>
                     <div style={{ lineHeight: 1.15 }}>

@@ -217,10 +217,10 @@ Regras de quem pode o quê: [perfis-e-permissoes.md](perfis-e-permissoes.md#tran
 | `GET /api/transferencias/autores` | Usuários que já criaram transferências (opções do filtro "criado por") | LEITOR | `200` `[{ "id", "nome" }]` |
 | `POST /api/transferencias` | Cria a transferência e os itens | TECNICO | `201` `TransferenciaDetalhe` |
 | `PUT /api/transferencias/{id}` | Altera o cabeçalho e os itens | TECNICO (autor) / ADMIN | `200` `TransferenciaDetalhe` |
-| `DELETE /api/transferencias/{id}` | Move para a lixeira | TECNICO (autor) / ADMIN | `204` |
+| `DELETE /api/transferencias/{id}` | Move para a lixeira, **com os itens**: eles saem da listagem, da busca por patrimônio e do painel, mas ficam guardados para a restauração | TECNICO (autor) / ADMIN | `204` |
 | `GET /api/transferencias/lixeira` | Lixeira: o TECNICO vê só as próprias, o ADMIN vê todas. Ordem: exclusão mais recente | TECNICO | `200` página de `TransferenciaResumo` |
 | `POST /api/transferencias/{id}/restaurar` | Tira da lixeira | TECNICO (autor) / ADMIN | `204` |
-| `DELETE /api/transferencias/{id}/definitivo` | Exclui de forma permanente, **apenas se estiver na lixeira** | TECNICO (autor) / ADMIN | `204` |
+| `DELETE /api/transferencias/{id}/definitivo` | Exclui de forma permanente o termo **e todos os seus itens**, **apenas se estiver na lixeira** | TECNICO (autor) / ADMIN | `204` |
 | `GET /api/transferencias/{id}/termo` | Termo de Transferência em PDF (ver abaixo) | LEITOR | `200` `application/pdf` |
 
 ### Termo em PDF

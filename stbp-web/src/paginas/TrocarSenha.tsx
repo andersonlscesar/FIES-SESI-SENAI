@@ -46,7 +46,7 @@ export function TrocarSenha() {
         <form onSubmit={enviar}>
           <Stack>
             {obrigatoria && (
-              <Alert color="marinho" variant="light" icon={<IconInfoCircle size={18} />}>
+              <Alert color="azul" variant="light" icon={<IconInfoCircle size={18} />}>
                 Por segurança, defina uma nova senha antes de continuar. Isso acontece no primeiro acesso e quando
                 um administrador redefine sua senha.
               </Alert>

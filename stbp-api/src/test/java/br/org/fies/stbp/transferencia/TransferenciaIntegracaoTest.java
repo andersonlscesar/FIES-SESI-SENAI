@@ -1,5 +1,6 @@
 package br.org.fies.stbp.transferencia;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.nullValue;
@@ -203,6 +204,30 @@ class TransferenciaIntegracaoTest extends TesteIntegracao {
                 .andExpect(status().isNoContent());
         mvc.perform(get("/api/transferencias/{id}", id).header("Authorization", tecnico))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void itensAcompanhamATransferenciaNaLixeiraENaExclusao() throws Exception {
+        long id = criar(tecnico, transferencia(SESI, SEDE, CEFEM, DOIS_ITENS));
+        String contarItens = "SELECT count(*) FROM item WHERE transferencia_id = ?";
+
+        // Na lixeira, os itens somem das buscas e do painel junto com a transferência, mas são guardados para restaurar
+        mvc.perform(delete("/api/transferencias/{id}", id).header("Authorization", tecnico));
+        mvc.perform(get("/api/transferencias").param("busca", "36102").header("Authorization", admin))
+                .andExpect(jsonPath("$.totalElementos").value(0));
+        mvc.perform(get("/api/painel").param("dataInicial", "2000-01-01").header("Authorization", admin))
+                .andExpect(jsonPath("$.resumo.itens").value(0));
+        assertThat(jdbc.queryForObject(contarItens, Long.class, id)).isEqualTo(2);
+
+        mvc.perform(post("/api/transferencias/{id}/restaurar", id).header("Authorization", tecnico));
+        mvc.perform(get("/api/transferencias/{id}", id).header("Authorization", tecnico))
+                .andExpect(jsonPath("$.itens[*].descricao", contains("Notebook Dell", "Teclado")));
+
+        // Na exclusão definitiva, os itens são apagados do banco com o termo
+        mvc.perform(delete("/api/transferencias/{id}", id).header("Authorization", tecnico));
+        mvc.perform(delete("/api/transferencias/{id}/definitivo", id).header("Authorization", tecnico))
+                .andExpect(status().isNoContent());
+        assertThat(jdbc.queryForObject(contarItens, Long.class, id)).isZero();
     }
 
     @Test

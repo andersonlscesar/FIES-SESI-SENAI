@@ -3,8 +3,11 @@ import {
   Alert,
   Button,
   Center,
+  Checkbox,
+  CloseButton,
   Group,
   Loader,
+  Menu,
   Paper,
   Select,
   SimpleGrid,
@@ -15,8 +18,20 @@ import {
 } from '@mantine/core'
 import { DateInput } from '@mantine/dates'
 import { useForm } from '@mantine/form'
+import { useDebouncedValue } from '@mantine/hooks'
 import { modals } from '@mantine/modals'
-import { IconArrowDown, IconArrowUp, IconClearAll, IconListNumbers, IconPlus, IconTrash } from '@tabler/icons-react'
+import {
+  IconArrowDown,
+  IconArrowUp,
+  IconChevronDown,
+  IconClearAll,
+  IconEdit,
+  IconListCheck,
+  IconListNumbers,
+  IconPlus,
+  IconSearch,
+  IconTrash,
+} from '@tabler/icons-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
@@ -27,6 +42,9 @@ import type { Motivo, TransferenciaDetalhe, TransferenciaPedido } from '../../ap
 import { useInstituicoes, useUnidades } from '../../componentes/consultas'
 import { errosDeCampo, mensagemDeErro, MOTIVOS, notificarErro, notificarSucesso } from '../../componentes/util'
 import { CabecalhoPagina } from '../../componentes/CabecalhoPagina'
+import { EdicaoItensLote } from '../../componentes/EdicaoItensLote'
+import { aplicarEmLote, criterios, intervalo, type AlteracoesLote } from '../../componentes/edicaoLote'
+import { filtrarItens } from '../../componentes/filtroItens'
 import { GeradorItens, type ItemGerado } from '../../componentes/GeradorItens'
 import { descreverIntervalo, MAXIMO_ITENS } from '../../componentes/sequencia'
 
@@ -55,6 +73,9 @@ const novaChave = () => crypto.randomUUID()
 const itemVazio = (): ItemForm => ({ chave: novaChave(), descricao: '', patrimonio: '', observacao: '' })
 const itemEstaVazio = (i: ItemForm) => !i.id && !i.descricao.trim() && !i.patrimonio.trim() && !i.observacao.trim()
 const obrigatorio = (mensagem: string) => (v: string) => (v.trim() ? null : mensagem)
+/** A partir de quantos itens o filtro aparece (mesmo critério do detalhe). */
+const MINIMO_PARA_FILTRO = 6
+const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
 
 function valoresDe(t: TransferenciaDetalhe): ValoresForm {
   return {
@@ -87,6 +108,7 @@ export function FormularioTransferencia() {
   const unidades = useUnidades()
   const [enviando, setEnviando] = useState(false)
   const [geradorAberto, setGeradorAberto] = useState(false)
+  const [edicaoLote, setEdicaoLote] = useState(0) // 0 = fechada; muda a cada abertura para começar limpa
   const inicializado = useRef(false)
 
   const existente = useQuery({
@@ -123,6 +145,30 @@ export function FormularioTransferencia() {
   const [itens, setItens] = useState<ItemForm[]>(() => [itemVazio()])
   const [errosItens, setErrosItens] = useState<ErrosItens>({})
 
+  // Seleção de itens para edição em lote (por chave, que não muda ao reordenar)
+  const [selecionados, setSelecionados] = useState<ReadonlySet<string>>(() => new Set())
+  const ancora = useRef<string | null>(null) // último item clicado, para selecionar intervalos com Shift
+  const chavesVisiveis = useRef<string[]>([])
+
+  // Filtro da grade. Calculado quando a busca ou a quantidade de itens muda, e não a cada tecla nos itens:
+  // assim um item não some da tela enquanto está sendo editado.
+  const [busca, setBusca] = useState('')
+  const [buscaAplicada] = useDebouncedValue(busca, 150)
+  const itensAtuais = useRef(itens)
+  itensAtuais.current = itens
+  const chavesFiltradas = useMemo(() => {
+    if (!buscaAplicada.trim()) return null
+    const comOrdem = itensAtuais.current.map((i, n) => ({
+      chave: i.chave,
+      ordem: n + 1,
+      descricao: i.descricao,
+      patrimonio: i.patrimonio.trim() ? i.patrimonio : null,
+      observacao: i.observacao,
+    }))
+    return new Set(filtrarItens(comOrdem, buscaAplicada).map((i) => i.chave))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buscaAplicada, itens.length])
+
   // Ações das linhas com identidade estável (não dependem de nada do render): a memorização das linhas funciona
   const acoesItem = useMemo<AcoesItem>(
     () => ({
@@ -142,9 +188,27 @@ export function FormularioTransferencia() {
           copia.splice(para, 0, movido)
           return copia
         }),
-      remover: (i) => {
+      remover: (i, chave) => {
         setItens((atuais) => atuais.filter((_, j) => j !== i))
+        setSelecionados((atual) => {
+          if (!atual.has(chave)) return atual
+          const novo = new Set(atual)
+          novo.delete(chave)
+          return novo
+        })
         setErrosItens({}) // os índices mudam; os erros voltam a aparecer ao salvar
+      },
+      selecionar: (chave, marcado, comShift) => {
+        const chaves = comShift && ancora.current ? intervalo(chavesVisiveis.current, ancora.current, chave) : [chave]
+        ancora.current = chave
+        setSelecionados((atual) => {
+          const novo = new Set(atual)
+          for (const c of chaves) {
+            if (marcado) novo.add(c)
+            else novo.delete(c)
+          }
+          return novo
+        })
       },
     }),
     [],
@@ -259,6 +323,41 @@ export function FormularioTransferencia() {
       onConfirm: () => {
         setItens([itemVazio()])
         setErrosItens({})
+        setSelecionados(new Set())
+      },
+    })
+
+  const visiveis = chavesFiltradas ? itens.filter((i) => chavesFiltradas.has(i.chave)) : itens
+  chavesVisiveis.current = visiveis.map((i) => i.chave)
+  const visiveisSelecionados = visiveis.filter((i) => selecionados.has(i.chave)).length
+  const comFiltro = itens.length >= MINIMO_PARA_FILTRO
+
+  /** Seleciona entre os itens visíveis (respeita o filtro). */
+  const selecionarVisiveis = (criterio: (i: ItemForm) => boolean) => {
+    setSelecionados(new Set(visiveis.filter(criterio).map((i) => i.chave)))
+    ancora.current = null
+  }
+  const inverterSelecao = () => setSelecionados(new Set(visiveis.filter((i) => !selecionados.has(i.chave)).map((i) => i.chave)))
+
+  const aplicarLote = (alteracoes: AlteracoesLote) => {
+    const novos = aplicarEmLote(itens, selecionados, alteracoes)
+    const alterados = novos.filter((item, i) => item !== itens[i]).length
+    setItens(novos)
+    setErrosItens({})
+    notificarSucesso(`Alteração aplicada a ${plural(alterados, 'item', 'itens')}.`)
+  }
+
+  const removerSelecionados = () =>
+    modals.openConfirmModal({
+      title: `Remover ${plural(selecionados.size, 'item selecionado', 'itens selecionados')}?`,
+      children: <Text size="sm">Eles saem da lista do formulário. Nada é gravado até você salvar.</Text>,
+      labels: { confirm: 'Remover', cancel: 'Cancelar' },
+      confirmProps: { color: 'red' },
+      onConfirm: () => {
+        const restantes = itens.filter((i) => !selecionados.has(i.chave))
+        setItens(restantes.length > 0 ? restantes : [itemVazio()])
+        setSelecionados(new Set())
+        setErrosItens({})
       },
     })
   return (
@@ -333,10 +432,79 @@ export function FormularioTransferencia() {
               {errosItens.itens}
             </Alert>
           )}
+          {(comFiltro || selecionados.size > 0) && (
+            <Group justify="space-between" gap="sm" py="xs" mb="xs" className="stbp-barra-itens">
+              <Group gap="xs">
+                {comFiltro && (
+                  <TextInput
+                    aria-label="Filtrar itens"
+                    placeholder="Filtrar por descrição, patrimônio ou nº"
+                    size="xs"
+                    w={280}
+                    leftSection={<IconSearch size={14} />}
+                    value={busca}
+                    onChange={(e) => setBusca(e.currentTarget.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') setBusca('')
+                      if (e.key === 'Enter') e.preventDefault() // não envia o formulário
+                    }}
+                    rightSection={busca && <CloseButton size="sm" aria-label="Limpar filtro" onClick={() => setBusca('')} />}
+                  />
+                )}
+                <Menu position="bottom-start">
+                  <Menu.Target>
+                    <Button size="xs" variant="default" leftSection={<IconListCheck size={14} />} rightSection={<IconChevronDown size={14} />}>
+                      Selecionar
+                    </Button>
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    {chavesFiltradas && <Menu.Label>Entre os {visiveis.length} itens filtrados</Menu.Label>}
+                    <Menu.Item onClick={() => selecionarVisiveis(() => true)}>Todos</Menu.Item>
+                    <Menu.Item onClick={() => selecionarVisiveis(criterios.semObservacao)}>Sem observação</Menu.Item>
+                    <Menu.Item onClick={() => selecionarVisiveis(criterios.semPatrimonio)}>Sem patrimônio</Menu.Item>
+                    <Menu.Item onClick={() => selecionarVisiveis(criterios.semDescricao)}>Sem descrição</Menu.Item>
+                    <Menu.Divider />
+                    <Menu.Item onClick={inverterSelecao}>Inverter seleção</Menu.Item>
+                    <Menu.Item onClick={() => setSelecionados(new Set())} disabled={selecionados.size === 0}>
+                      Nenhum
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
+                {chavesFiltradas && (
+                  <Text size="xs" c="dimmed">
+                    {visiveis.length} de {plural(itens.length, 'item', 'itens')}
+                  </Text>
+                )}
+              </Group>
+              {selecionados.size > 0 && (
+                <Group gap="xs">
+                  <Text size="sm" fw={500} aria-live="polite">
+                    {plural(selecionados.size, 'selecionado', 'selecionados')}
+                  </Text>
+                  <Button size="xs" leftSection={<IconEdit size={14} />} onClick={() => setEdicaoLote((n) => n + 1)}>
+                    Editar selecionados
+                  </Button>
+                  <Button size="xs" variant="subtle" color="red" leftSection={<IconTrash size={14} />} onClick={removerSelecionados}>
+                    Remover
+                  </Button>
+                  <CloseButton size="sm" aria-label="Limpar seleção" title="Limpar seleção" onClick={() => setSelecionados(new Set())} />
+                </Group>
+              )}
+            </Group>
+          )}
           <Table.ScrollContainer minWidth={760}>
             <Table verticalSpacing={6}>
               <Table.Thead>
                 <Table.Tr>
+                  <Table.Th w={36} pr={0}>
+                    <Checkbox
+                      size="xs"
+                      aria-label="Selecionar todos os itens visíveis"
+                      checked={visiveis.length > 0 && visiveisSelecionados === visiveis.length}
+                      indeterminate={visiveisSelecionados > 0 && visiveisSelecionados < visiveis.length}
+                      onChange={(e) => selecionarVisiveis(() => e.currentTarget.checked)}
+                    />
+                  </Table.Th>
                   <Table.Th w={50}>Item</Table.Th>
                   <Table.Th>Descrição do bem *</Table.Th>
                   <Table.Th w={170}>Patrimônio</Table.Th>
@@ -345,18 +513,30 @@ export function FormularioTransferencia() {
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {itens.map((item, i) => (
+                {itens.map((item, i) =>
+                  chavesFiltradas && !chavesFiltradas.has(item.chave) ? null : (
                   <LinhaItem
                     key={item.chave}
                     indice={i}
                     item={item}
+                    selecionado={selecionados.has(item.chave)}
                     total={itens.length}
                     erroDescricao={errosItens[`itens.${i}.descricao`]}
                     erroPatrimonio={errosItens[`itens.${i}.patrimonio`]}
                     erroObservacao={errosItens[`itens.${i}.observacao`]}
                     acoes={acoesItem}
                   />
-                ))}
+                  ),
+                )}
+                {visiveis.length === 0 && (
+                  <Table.Tr>
+                    <Table.Td colSpan={6}>
+                      <Text size="sm" c="dimmed" ta="center" py="md">
+                        Nenhum item corresponde a “{buscaAplicada.trim()}”.
+                      </Text>
+                    </Table.Td>
+                  </Table.Tr>
+                )}
               </Table.Tbody>
             </Table>
           </Table.ScrollContainer>
@@ -365,7 +545,10 @@ export function FormularioTransferencia() {
               variant="light"
               leftSection={<IconPlus size={16} />}
               disabled={itens.length >= MAXIMO_ITENS}
-              onClick={() => setItens((atuais) => [...atuais, itemVazio()])}
+              onClick={() => {
+                setBusca('') // o item novo precisa aparecer
+                setItens((atuais) => [...atuais, itemVazio()])
+              }}
             >
               Adicionar item
             </Button>
@@ -373,7 +556,10 @@ export function FormularioTransferencia() {
               variant="default"
               leftSection={<IconListNumbers size={16} />}
               disabled={vagas < 1}
-              onClick={() => setGeradorAberto(true)}
+              onClick={() => {
+                setBusca('')
+                setGeradorAberto(true)
+              }}
             >
               Gerar itens em sequência
             </Button>
@@ -384,6 +570,17 @@ export function FormularioTransferencia() {
             )}
           </Group>
         </Paper>
+
+        {edicaoLote > 0 && (
+          <EdicaoItensLote
+            key={edicaoLote}
+            aberto
+            itens={itens}
+            selecionados={selecionados}
+            aoFechar={() => setEdicaoLote(0)}
+            aoAplicar={aplicarLote}
+          />
+        )}
 
         <GeradorItens
           aberto={geradorAberto}
@@ -409,7 +606,9 @@ export function FormularioTransferencia() {
 interface AcoesItem {
   alterar: (indice: number, campo: 'descricao' | 'patrimonio' | 'observacao', valor: string) => void
   mover: (de: number, para: number) => void
-  remover: (indice: number) => void
+  remover: (indice: number, chave: string) => void
+  /** Marca/desmarca um item; com Shift, o intervalo desde o último clicado. */
+  selecionar: (chave: string, marcado: boolean, comShift: boolean) => void
 }
 
 /**
@@ -419,6 +618,7 @@ interface AcoesItem {
 const LinhaItem = memo(function LinhaItem({
   indice,
   item,
+  selecionado,
   total,
   erroDescricao,
   erroPatrimonio,
@@ -427,6 +627,7 @@ const LinhaItem = memo(function LinhaItem({
 }: {
   indice: number
   item: ItemForm
+  selecionado: boolean
   total: number
   erroDescricao?: ReactNode
   erroPatrimonio?: ReactNode
@@ -435,7 +636,15 @@ const LinhaItem = memo(function LinhaItem({
 }) {
   const n = indice + 1
   return (
-    <Table.Tr style={{ verticalAlign: 'top' }}>
+    <Table.Tr style={{ verticalAlign: 'top' }} data-selecionado={selecionado || undefined} className="stbp-linha-item">
+      <Table.Td pt={14} pr={0}>
+        <Checkbox
+          size="xs"
+          aria-label={`Selecionar item ${n}`}
+          checked={selecionado}
+          onChange={(e) => acoes.selecionar(item.chave, e.currentTarget.checked, (e.nativeEvent as MouseEvent).shiftKey === true)}
+        />
+      </Table.Td>
       <Table.Td pt={14} className="stbp-numero" c="dimmed">
         {String(n).padStart(2, '0')}
       </Table.Td>
@@ -484,7 +693,7 @@ const LinhaItem = memo(function LinhaItem({
           >
             <IconArrowDown size={16} />
           </ActionIcon>
-          <ActionIcon variant="subtle" color="red" disabled={total === 1} aria-label="Remover item" title="Remover" onClick={() => acoes.remover(indice)}>
+          <ActionIcon variant="subtle" color="red" disabled={total === 1} aria-label="Remover item" title="Remover" onClick={() => acoes.remover(indice, item.chave)}>
             <IconTrash size={16} />
           </ActionIcon>
         </Group>

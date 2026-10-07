@@ -5,18 +5,24 @@
 :root {
   /* Fundo da área de trabalho (um tom abaixo das superfícies/cartões) */
   --stbp-fundo: #f4f5f7;
-  /* Menu lateral: grafite-marinho quase preto, indicador neutro */
-  --stbp-lateral-fundo: #0d1520;
-  --stbp-lateral-borda: #0d1520;
-  --stbp-lateral-texto: #aeb8c6;
-  --stbp-lateral-texto-fraco: #6b7787;
-  --stbp-lateral-ativo-fundo: rgba(255, 255, 255, 0.06);
-  --stbp-lateral-ativo-destaque: #e8ecf1;
+  /* Menu lateral: azul do SENAI um tom abaixo (azul-8), o mesmo dos botões, nos dois temas; textos com contraste ≥ 4,5:1 (ver docs/design.md) */
+  --stbp-lateral-fundo: #194a92;
+  --stbp-lateral-borda: #194a92;
+  --stbp-lateral-filete: rgba(255, 255, 255, 0.16);
+  --stbp-lateral-texto: #e6eefa;
+  --stbp-lateral-texto-fraco: #c8d8f2;
+  --stbp-lateral-hover-fundo: rgba(255, 255, 255, 0.06);
+  --stbp-lateral-ativo-fundo: rgba(255, 255, 255, 0.12);
+  --stbp-lateral-ativo-destaque: #ffffff;
   /* Cabeçalho de tabelas */
   --stbp-th-fundo: #f7f8fa;
-  /* Dados em gráficos: marinho com croma suficiente para não ser lido como cinza (validado; ver docs/design.md) */
-  --stbp-dado: #2c5a96;
+  /* Dados em gráficos: o azul institucional (tom 7 no claro, 5 no escuro; ver docs/design.md) */
+  --stbp-dado: #2058ab;
   --stbp-dado-trilho: #e9edf2;
+  /* Fundo de trechos destacados por busca */
+  --stbp-destaque-fundo: #fbe7a1;
+  /* Linha selecionada em grades editáveis */
+  --stbp-selecao-fundo: #eaf1fb;
   /* Marcador de imagem ausente */
   --stbp-placeholder-fundo: #e6eaf0;
   --stbp-placeholder-icone: #9aa6b6;
@@ -27,11 +33,11 @@
 
 :root[data-mantine-color-scheme='dark'] {
   --stbp-fundo: #0f1319;
-  --stbp-lateral-fundo: #0a0d12;
   --stbp-th-fundo: #161b23;
-  --stbp-dado: #5a86c4;
+  --stbp-dado: #447fd8;
   --stbp-dado-trilho: #222833;
-  --stbp-lateral-borda: #222833;
+  --stbp-destaque-fundo: #5c4a12;
+  --stbp-selecao-fundo: #17233a;
   --stbp-placeholder-fundo: #222833;
   --stbp-placeholder-icone: #4f596a;
   --stbp-borda: #2b323e;
@@ -113,4 +119,32 @@ body {
   font-weight: 500;
   letter-spacing: 0.02em;
   white-space: nowrap;
+}
+
+/* Trecho encontrado por um filtro (ex.: itens da transferência) */
+.stbp-destaque {
+  background: var(--stbp-destaque-fundo);
+  color: inherit;
+  padding: 0;
+}
+
+/*
+ * No escuro, o Mantine 9 pinta texto de botões "subtle"/"light" com o tom 0 (quase branco).
+ * Para ações destrutivas, o vermelho precisa continuar visível ("Mover para a lixeira", "Excluir").
+ * Seletor reforçado porque o Mantine injeta suas variáveis depois desta folha.
+ */
+html:root[data-mantine-color-scheme='dark'] {
+  --mantine-color-red-light-color: var(--mantine-color-red-4);
+}
+
+/* Formulário da transferência: barra de filtro/seleção fixa ao rolar listas longas, e linha selecionada */
+.stbp-barra-itens {
+  position: sticky;
+  top: var(--app-shell-header-offset, 64px);
+  z-index: 3;
+  background: var(--mantine-color-body);
+  border-bottom: 1px solid var(--stbp-borda);
+}
+.stbp-linha-item[data-selecionado] > td {
+  background: var(--stbp-selecao-fundo);
 }

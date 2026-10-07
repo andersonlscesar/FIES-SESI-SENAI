@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from 'react'
 /**
  * Marcador de categoria ou situação: um quadrado de 8 px na cor da categoria + texto em tom normal.
  * Substitui as etiquetas coloridas: a cor vira um sinal discreto, não um bloco que compete com o conteúdo.
- * {@code cor} é uma paleta do Mantine (ex.: "marinho", "red"); usa tom escuro no tema claro e médio no escuro.
+ * {@code cor} é uma paleta do Mantine (ex.: "azul", "red"); usa tom escuro no tema claro e médio no escuro.
  */
 export function Marcador({
   cor,

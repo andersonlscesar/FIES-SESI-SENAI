@@ -59,7 +59,14 @@ export function GeradorItens({
 
   return (
     <Modal opened={aberto} onClose={aoFechar} title="Gerar itens em sequência" size="lg">
-      <form onSubmit={gerar}>
+      {/* O modal fica dentro do formulário da transferência na árvore do React: sem o stopPropagation,
+          o envio deste formulário também enviaria (e validaria) o formulário da transferência */}
+      <form
+        onSubmit={(e) => {
+          e.stopPropagation()
+          gerar(e)
+        }}
+      >
         <Stack>
           <Text size="sm" c="dimmed">
             Para lotes de bens iguais com patrimônio sequencial. Os itens são adicionados ao final da lista e podem ser

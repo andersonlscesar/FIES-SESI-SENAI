@@ -237,7 +237,93 @@ test('gera 100 itens com patrimônio sequencial', async ({ page }) => {
   await expect(page.getByText('100 itens', { exact: true })).toBeVisible()
   await expect(page.getByRole('cell', { name: 'Com carregador' })).toBeVisible()
 
+  // Filtro rápido dos itens: patrimônio parcial, observação sem acento/maiúsculas, nº do item, Esc limpa
+  const filtro = page.getByLabel('Filtrar itens')
+  await filtro.fill('090007')
+  await expect(page.getByText('10 de 100 itens')).toBeVisible()
+  await filtro.fill('CARREGADOR')
+  await expect(page.getByText('1 de 100 itens')).toBeVisible()
+  await expect(page.getByRole('cell', { name: '0900050' })).toBeVisible()
+  await capturar(page, '17-filtro-itens')
+  await filtro.fill('latitude xyz')
+  await expect(page.getByText('Nenhum item corresponde a “latitude xyz”.')).toBeVisible()
+  await filtro.press('Escape')
+  await expect(page.getByText('100 itens', { exact: true })).toBeVisible()
+
   // Limpeza: lixeira e exclusão definitiva
+  await page.getByRole('button', { name: 'Mover para a lixeira' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Mover para a lixeira' }).click()
+  await page.getByRole('button', { name: 'Excluir definitivamente' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Excluir definitivamente' }).click()
+  await expect(page.getByRole('heading', { name: 'Lixeira' })).toBeVisible()
+})
+
+test('edição em lote: observação esquecida, patrimônio por intervalo e filtro', async ({ page }) => {
+  await entrar(page)
+  await abrirNovaTransferencia(page)
+  await escolher(page, 'Instituição', 'SESI')
+  await escolher(page, 'De (unidade de origem)', 'SEDE')
+  await escolher(page, 'Para (unidade de destino)', 'CEFEM')
+  await page.getByLabel('Responsável pelo envio').fill('teste e2e lote')
+  await page.getByLabel('Responsável pelo recebimento').fill('teste e2e lote')
+
+  // 20 notebooks gerados sem observação; um deles recebe observação à mão
+  await page.getByRole('button', { name: 'Gerar itens em sequência' }).click()
+  const gerador = page.getByRole('dialog')
+  await gerador.getByLabel('Descrição dos itens').fill('Notebook Dell Latitude 3420')
+  await gerador.getByLabel('Patrimônio inicial').fill('0800001')
+  await gerador.getByLabel('Quantidade').fill('20')
+  await gerador.getByRole('button', { name: 'Gerar 20 itens' }).click()
+  // O envio do gerador não pode disparar a validação do formulário da transferência
+  await expect(page.getByText('Informe a descrição')).toHaveCount(0)
+  await expect(page.getByText('Há itens sem descrição.')).toHaveCount(0)
+  await page.getByLabel('Observação do item 2', { exact: true }).fill('Com fonte')
+
+  // "Esqueci a observação": seleciona os sem observação e aplica de uma vez
+  await page.getByRole('button', { name: 'Selecionar' }).click()
+  await page.getByRole('menuitem', { name: 'Sem observação' }).click()
+  await expect(page.getByText('19 selecionados')).toBeVisible()
+  await page.getByRole('button', { name: 'Editar selecionados' }).click()
+  const lote = page.getByRole('dialog', { name: 'Editar 19 itens selecionados' })
+  await lote.getByLabel('Texto da observação').fill('Lab 16')
+  await capturar(page, '18-edicao-lote')
+  await lote.getByRole('button', { name: 'Aplicar a 19 itens' }).click()
+  await expect(page.getByLabel('Observação do item 1', { exact: true })).toHaveValue('Lab 16')
+  await expect(page.getByLabel('Observação do item 2', { exact: true })).toHaveValue('Com fonte')
+  await expect(page.getByLabel('Observação do item 20', { exact: true })).toHaveValue('Lab 16')
+
+  // Intervalo com Shift (itens 3 a 6) e renumeração do patrimônio
+  await page.getByRole('button', { name: 'Limpar seleção' }).click()
+  await page.getByLabel('Selecionar item 3', { exact: true }).click()
+  await page.getByLabel('Selecionar item 6', { exact: true }).click({ modifiers: ['Shift'] })
+  await expect(page.getByText('4 selecionados')).toBeVisible()
+  await page.getByRole('button', { name: 'Editar selecionados' }).click()
+  const lote2 = page.getByRole('dialog', { name: 'Editar 4 itens selecionados' })
+  await lote2.getByRole('checkbox', { name: 'Observação' }).uncheck()
+  await lote2.getByRole('checkbox', { name: 'Patrimônio' }).check()
+  await lote2.getByLabel('Patrimônio inicial').fill('NB-0100')
+  await expect(lote2.getByText('NB-0100 a NB-0103')).toBeVisible()
+  await lote2.getByRole('button', { name: 'Aplicar a 4 itens' }).click()
+  await expect(page.getByLabel('Patrimônio do item 3', { exact: true })).toHaveValue('NB-0100')
+  await expect(page.getByLabel('Patrimônio do item 6', { exact: true })).toHaveValue('NB-0103')
+  await expect(page.getByLabel('Patrimônio do item 7', { exact: true })).toHaveValue('0800007')
+
+  // Filtro da grade + "Todos" seleciona só os filtrados
+  await page.getByRole('button', { name: 'Limpar seleção' }).click()
+  await page.getByLabel('Filtrar itens').fill('NB-')
+  await expect(page.getByText('4 de 20 itens')).toBeVisible()
+  await page.getByLabel('Selecionar todos os itens visíveis').check()
+  await expect(page.getByText('4 selecionados')).toBeVisible()
+  await page.getByLabel('Filtrar itens').press('Escape')
+  await expect(page.getByLabel('Patrimônio do item 20', { exact: true })).toBeVisible()
+
+  // Salva e confere no detalhe
+  await page.getByRole('button', { name: 'Criar transferência' }).click()
+  await expect(page.getByRole('heading', { name: /Transferência nº \d+/ })).toBeVisible()
+  await page.getByLabel('Filtrar itens').fill('lab 16')
+  await expect(page.getByText('19 de 20 itens')).toBeVisible()
+
+  // Limpeza
   await page.getByRole('button', { name: 'Mover para a lixeira' }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Mover para a lixeira' }).click()
   await page.getByRole('button', { name: 'Excluir definitivamente' }).click()

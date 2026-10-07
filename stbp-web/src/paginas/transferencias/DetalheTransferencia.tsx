@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Center, Grid, Group, Loader, Menu, Paper, SimpleGrid, Stack, Table, Text } from '@mantine/core'
+import { Alert, Box, Button, Center, Grid, Group, Loader, Menu, Paper, SimpleGrid, Stack, Text } from '@mantine/core'
 import { modals } from '@mantine/modals'
 import { IconArrowRight, IconChevronDown, IconEdit, IconFileTypePdf, IconRestore, IconTrash, IconTrashX } from '@tabler/icons-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -8,6 +8,7 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { transferenciasApi } from '../../api/recursos'
 import { CabecalhoPagina } from '../../componentes/CabecalhoPagina'
 import { FotoUnidade } from '../../componentes/FotoUnidade'
+import { ItensTransferidos } from '../../componentes/ItensTransferidos'
 import { abrirTermo, formatarData, formatarDataHora, mensagemDeErro, MOTIVOS, notificarErro, notificarSucesso } from '../../componentes/util'
 import { Marcador } from '../../componentes/Marcador'
 
@@ -69,7 +70,12 @@ export function DetalheTransferencia() {
   const moverParaLixeira = () =>
     modals.openConfirmModal({
       title: `Mover a transferência nº ${t.id} para a lixeira?`,
-      children: <Text size="sm">Ela some da listagem, mas pode ser restaurada pela lixeira.</Text>,
+      children: (
+        <Text size="sm">
+          Ela e {t.itens.length === 1 ? 'o seu item saem' : `os seus ${t.itens.length} itens saem`} da listagem, das
+          buscas e do painel. Pode ser restaurada pela lixeira.
+        </Text>
+      ),
       labels: { confirm: 'Mover para a lixeira', cancel: 'Cancelar' },
       confirmProps: { color: 'red' },
       onConfirm: () => executar(() => transferenciasApi.moverParaLixeira(t.id), 'Transferência movida para a lixeira.'),
@@ -78,7 +84,12 @@ export function DetalheTransferencia() {
   const excluirDefinitivamente = () =>
     modals.openConfirmModal({
       title: `Excluir definitivamente a transferência nº ${t.id}?`,
-      children: <Text size="sm">Esta ação não pode ser desfeita. O termo e todos os itens serão apagados.</Text>,
+      children: (
+        <Text size="sm">
+          O termo e {t.itens.length === 1 ? 'o seu item serão apagados' : `os seus ${t.itens.length} itens serão apagados`}.
+          Esta ação não pode ser desfeita.
+        </Text>
+      ),
       labels: { confirm: 'Excluir definitivamente', cancel: 'Cancelar' },
       confirmProps: { color: 'red' },
       onConfirm: () =>
@@ -192,38 +203,7 @@ export function DetalheTransferencia() {
               </Center>
             </Paper>
 
-            <Paper withBorder>
-              <Group justify="space-between" px="md" py="sm" style={{ borderBottom: '1px solid var(--stbp-borda)' }}>
-                <Text fw={600}>Itens transferidos</Text>
-                <Text size="sm" c="dimmed">
-                  {t.itens.length} {t.itens.length === 1 ? 'item' : 'itens'}
-                </Text>
-              </Group>
-              <Table.ScrollContainer minWidth={600}>
-                <Table striped>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th w={64}>Item</Table.Th>
-                      <Table.Th>Descrição do bem</Table.Th>
-                      <Table.Th w={170}>Patrimônio</Table.Th>
-                      <Table.Th>Observação</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {t.itens.map((item) => (
-                      <Table.Tr key={item.id}>
-                        <Table.Td className="stbp-numero" c="dimmed">
-                          {String(item.ordem).padStart(2, '0')}
-                        </Table.Td>
-                        <Table.Td>{item.descricao}</Table.Td>
-                        <Table.Td className="stbp-numero">{item.patrimonio ?? <Text c="dimmed" span>S/P</Text>}</Table.Td>
-                        <Table.Td style={{ whiteSpace: 'pre-line' }}>{item.observacao}</Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </Table.ScrollContainer>
-            </Paper>
+            <ItensTransferidos itens={t.itens} />
           </Stack>
         </Grid.Col>
 

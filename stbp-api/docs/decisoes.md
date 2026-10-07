@@ -4,6 +4,53 @@ As decisões técnicas do projeto e o motivo de cada uma, da mais recente para a
 
 ---
 
+### D-043 · Edição em lote dos itens no formulário
+**2026-10-07 (pedido do usuário: "esqueci de colocar a observação em vários itens, gostaria de em uma vez só aplicar a observação").**
+- **Seleção:** caixa por linha, "selecionar todos os visíveis" no cabeçalho, Shift+clique para intervalos e seleções rápidas (sem observação, sem patrimônio, sem descrição, inverter). A seleção é guardada pela chave do item, então sobrevive a reordenações.
+- **"Editar selecionados":** altera observação, descrição e patrimônio de uma vez.
+  - **Observação:** três modos; o padrão é "só nos sem observação", que resolve o caso relatado sem sobrescrever o que já foi digitado.
+  - **Patrimônio:** renumera em sequência (o mesmo gerador da D-034) ou marca S/P, e avisa sobre repetições.
+- **Também:** remover os selecionados e filtrar a grade, com o mesmo filtro do detalhe (D-041).
+- **Por que no navegador:** tudo acontece no estado do formulário, sem nada novo na API. O lote só vai ao servidor ao salvar, como qualquer edição de item.
+- **Desempenho:** a seleção usa `Set` imutável e linhas memorizadas. Marcar um item redesenha só aquela linha, e o teste de digitação com 100 itens continua abaixo do limite.
+- **Correção encontrada no caminho:** o envio do modal "Gerar itens em sequência" se propagava, pela árvore do React (portais), até o formulário da transferência. Isso disparava a validação antes da hora e mostrava "Há itens sem descrição" no item 1. O modal agora interrompe a propagação, e o teste de ponta a ponta confere isso.
+
+### D-042 · Menu e botões um tom mais escuros
+**2026-10-07 (pedido do usuário: "não gostei da tonalidade do menu lateral, está muito claro").** O usuário escolheu escurecer o menu **e** os botões juntos, para que continuem iguais (D-040).
+- **Cor:** `#194a92`, o tom 8 da mesma paleta, um degrau abaixo do `#2058ab` do site. Vale para os dois temas (`primaryShade` 8) e para o filete do login.
+- **Contraste:** texto branco a 8,6:1, e todos os textos do menu continuam ≥ 4,5:1, inclusive no item ativo e no hover.
+- **Gráficos:** continuam no `#2058ab` (`--stbp-dado`).
+
+### D-041 · Filtro rápido nos itens da transferência
+**2026-10-07 (pedido do usuário: "pode haver muitos itens e talvez seja necessário fazer uma busca rápida pelo item").**
+- **Onde:** o detalhe da transferência ganhou um campo de filtro sobre a tabela de itens, exibido a partir de 6 itens.
+- **Como filtra:** no navegador, sem nova chamada à API, porque o detalhe já traz todos os itens. Busca na descrição, no patrimônio (parte do número, ou "S/P" para os sem patrimônio), na observação e no nº do item ("7" ou "07"). Ignora acentos e maiúsculas, e com vários termos todos precisam casar ("dell 38491").
+- **Na tela:** os trechos encontrados ficam destacados, o contador mostra "10 de 100 itens" e `Esc` limpa a busca.
+- **Testes:** testes unitários em `filtroItens.test.ts` e um caso no teste de ponta a ponta dos 100 itens.
+- **Correção no caminho:** no tema escuro, os botões vermelhos discretos ("Mover para a lixeira") apareciam quase brancos, por padrão do Mantine 9. Agora usam o vermelho tom 4.
+
+### D-040 · Menu lateral no azul do SENAI-SE
+**2026-10-07 (pedido do usuário: "o menu pode ter a cor do senai também").** Revê o ponto da D-038 que mantinha o menu em grafite.
+- **Tema claro:** o menu usa `#2058ab`, a cor da barra de navegação de www.se.senai.br.
+- **Tema escuro (revisto no mesmo dia):** a primeira versão usava `#122d57` no menu, e os botões usavam `#2f6cc7`. O usuário apontou que o menu não combinava com os botões. Agora menu e botões usam `#2058ab` nos dois temas (`primaryShade` 7 no claro e no escuro).
+- **Legibilidade:** os textos do menu foram escolhidos por contraste calculado, sempre ≥ 4,5:1, inclusive nos rótulos pequenos de seção, no item ativo e no hover. O item ativo ganhou barra branca.
+- **Login:** o painel lateral do login continua grafite.
+
+### D-039 · Itens acompanham a transferência na exclusão
+**2026-10-07 (pedido do usuário: "ao excluir uma saída, seus itens também devem ser excluídos").** No sistema antigo, excluir uma saída deixava os itens para trás: o dump tinha itens órfãos de saídas apagadas, descartados na migração.
+- **Na API, os itens não existem fora do termo:**
+  - **Lixeira:** a transferência vai com os itens. Eles saem da listagem, da busca por patrimônio e do painel, e voltam juntos na restauração. Por isso não são apagados nesse momento.
+  - **Exclusão definitiva:** apaga o termo e os itens, pela cascata do JPA e também pela chave estrangeira `ON DELETE CASCADE` (V1). Mesmo uma exclusão feita direto no banco não deixa órfãos.
+- **Teste:** `TransferenciaIntegracaoTest.itensAcompanhamATransferenciaNaLixeiraENaExclusao` confere as três etapas, consultando a tabela `item` diretamente.
+- **Telas:** as confirmações de lixeira e de exclusão definitiva dizem quantos itens vão junto.
+
+### D-038 · Azul institucional do SENAI-SE
+**2026-10-07 (pedido do usuário: "o azul do site pode ser nesse tom", referindo-se a www.se.senai.br).**
+- **Origem da cor:** `#2058ab`, o azul da barra de navegação e dos botões do site (o mais usado na folha de estilos). O rodapé e a faixa do topo usam `#1b62cc`, um tom mais claro e mais vivo, que não foi adotado.
+- **Paleta:** a paleta principal `marinho` foi substituída por `azul`. O `#2058ab` é o tom 7 e o tom dos botões no tema claro. Os demais tons foram gerados em OKLCH com o mesmo matiz. No escuro, os botões usam o tom 6 `#2f6cc7`, que mantém 5,1:1 com texto branco.
+- **Gráficos:** também passam a usar o azul institucional (`--stbp-dado`). A cor separada da D-037 existia só porque o marinho antigo tinha croma baixo demais.
+- **O que não mudou:** o menu lateral continua grafite, com indicador neutro (D-036). O azul fica para a ação principal e para os dados, para não perder a sobriedade.
+
 ### D-037 · Painel de análise geral
 **2026-10-06 (pedido do usuário).**
 - **Endpoint:** `GET /api/painel` calcula no banco (SQL agregado) os indicadores do período e do período anterior equivalente, a evolução mensal, os motivos, as instituições, as unidades de origem e destino, as rotas, os emissores e os bens mais transferidos. Um único pedido alimenta a tela inteira.

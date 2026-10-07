@@ -17,18 +17,21 @@ import {
   type MantineColorsTuple,
 } from '@mantine/core'
 
-/** Azul-marinho institucional, escuro e pouco saturado (cor principal). */
-const marinho: MantineColorsTuple = [
-  '#eef1f5',
-  '#d9dfe8',
-  '#b3bfcf',
-  '#8a9cb4',
-  '#69809e',
-  '#536d90',
-  '#476289',
-  '#385277',
-  '#2b4466',
-  '#1e3352',
+/**
+ * Azul institucional do SENAI-SE (barra de navegação de www.se.senai.br: #2058ab, tom 7).
+ * Demais tons gerados em OKLCH com o mesmo matiz. Ver docs/design.md.
+ */
+const azul: MantineColorsTuple = [
+  '#eff6ff',
+  '#dae9ff',
+  '#b8d3fc',
+  '#8db6f4',
+  '#6599e8',
+  '#447fd8',
+  '#2f6cc7',
+  '#2058ab',
+  '#194a92',
+  '#16396e',
 ]
 
 /** Ardósia para o tema escuro (Mantine usa "dark" para fundos, superfícies e texto no modo escuro). */
@@ -46,10 +49,11 @@ const ardosia: MantineColorsTuple = [
 ]
 
 export const tema = createTheme({
-  primaryColor: 'marinho',
-  primaryShade: { light: 8, dark: 6 },
+  primaryColor: 'azul',
+  // Tom 8 nos dois temas, igual ao menu lateral (texto branco a 8,6:1)
+  primaryShade: { light: 8, dark: 8 },
   black: '#111823',
-  colors: { marinho, dark: ardosia },
+  colors: { azul, dark: ardosia },
 
   fontFamily: '"IBM Plex Sans Variable", "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif',
   fontFamilyMonospace: '"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace',

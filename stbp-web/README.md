@@ -32,7 +32,7 @@ npm test           # testes unitários (Vitest), ex.: regra de sequência de pat
 
 ## Design
 
-A direção visual é institucional e sóbria: azul-marinho, cantos discretos, números em fonte monoespaçada, e temas **claro e escuro**. Por padrão o tema segue o sistema operacional; o botão sol/lua no cabeçalho alterna. Tokens, cores, tipografia e padrões de tela estão em **[docs/design.md](docs/design.md)**, que deve ser consultado antes de criar uma tela nova.
+A direção visual é institucional e sóbria: o azul do SENAI-SE (`#2058ab`), cantos discretos, números em fonte monoespaçada, e temas **claro e escuro**. Por padrão o tema segue o sistema operacional; o botão sol/lua no cabeçalho alterna. Tokens, cores, tipografia e padrões de tela estão em **[docs/design.md](docs/design.md)**, que deve ser consultado antes de criar uma tela nova.
 
 ## Telas e perfis
 

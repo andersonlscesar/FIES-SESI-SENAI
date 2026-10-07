@@ -6,7 +6,7 @@ import { transferenciasApi } from '../api/recursos'
 import type { Motivo } from '../api/tipos'
 
 export const MOTIVOS: Record<Motivo, { nome: string; curto: string; tipo: 'Definitiva' | 'Temporária'; cor: string }> = {
-  TRANSFERENCIA_ENTRE_FILIAIS: { nome: 'Transferência entre filiais', curto: 'Entre filiais', tipo: 'Definitiva', cor: 'marinho' },
+  TRANSFERENCIA_ENTRE_FILIAIS: { nome: 'Transferência entre filiais', curto: 'Entre filiais', tipo: 'Definitiva', cor: 'azul' },
   BAIXA_DESCARTE: { nome: 'Baixa / Descarte', curto: 'Baixa/Descarte', tipo: 'Definitiva', cor: 'red' },
   MANUTENCAO: { nome: 'Manutenção', curto: 'Manutenção', tipo: 'Temporária', cor: 'orange' },
   EMPRESTIMO_TEMPORARIO: { nome: 'Empréstimo temporário', curto: 'Empréstimo', tipo: 'Temporária', cor: 'teal' },

@@ -12,7 +12,7 @@ Implementação:
 2. **Cantos quase retos.** O raio padrão é de 2 px. Nada de pílulas.
 3. **Cor é sinal, não enfeite.** Categorias e situações aparecem como **marcador** (quadrado de 8 px colorido + texto em tom normal), nunca como etiquetas coloridas (`Badge`). Agrupamentos neutros, como as instituições de uma unidade, usam a etiqueta de contorno `stbp-etiqueta`.
 4. **Números são dados de documento.** O nº do termo, o patrimônio, as datas e a ordem dos itens usam fonte monoespaçada com algarismos tabulares (classe `stbp-numero`), para alinhar em colunas e não serem confundidos com texto.
-5. **Uma cor de ação.** O azul-marinho institucional marca a ação principal de cada tela. O vermelho fica só para ações destrutivas, sempre com confirmação.
+5. **Uma cor de ação.** O azul institucional do SENAI-SE (tom 8) marca a ação principal de cada tela. O vermelho fica só para ações destrutivas, sempre com confirmação.
 6. **Os dois temas são iguais em qualidade.** Toda cor nova entra como token com valor claro **e** escuro. Nunca use `bg="white"`, `bg="gray.1"` ou similares fixos.
 
 ## Tipografia
@@ -31,20 +31,23 @@ Escala de títulos: h1 28 px (login), h2 20 px (título de página), h3 18 px, h
 
 | Token / paleta | Claro | Escuro | Uso |
 |---|---|---|---|
-| `marinho` (cor principal) | tom 8 `#2b4466` | tom 6 `#476289` | Botões principais, links, destaque. Marinho escuro e pouco saturado. No escuro o tom muda para manter contraste com texto branco |
+| `azul` (cor principal) | tom 8 `#194a92` | tom 8 `#194a92` | Botões principais, links, destaque. É o azul da barra de navegação de [se.senai.br](https://www.se.senai.br); os demais tons foram gerados em OKLCH com o mesmo matiz. O tom 8 fica um degrau abaixo do azul do site, porque o tom 7 ficou claro demais no menu. Texto branco sobre ele: 8,6:1. É o mesmo tom nos dois temas e no menu lateral |
 | `dark` (ardósia) | — | `#0b0e13` … `#d5dae2` | Paleta do tema escuro: tons de ardósia, não preto puro |
 | `--stbp-fundo` | `#f4f5f7` | `#0f1319` | Fundo da área de trabalho |
-| `--stbp-lateral-fundo` | `#0d1520` (grafite-marinho) | `#0a0d12` | Menu lateral |
-| `--stbp-lateral-ativo-destaque` | `#e8ecf1` | `#e8ecf1` | Barra do item ativo do menu (neutra, sem azul) |
+| `--stbp-lateral-fundo` | `#194a92` (azul-8) | `#194a92` | Menu lateral. Textos `--stbp-lateral-texto` e `--stbp-lateral-texto-fraco` com contraste ≥ 4,5:1 sobre o fundo, inclusive no item ativo e no hover |
+| `--stbp-lateral-ativo-destaque` | `#ffffff` | `#ffffff` | Barra do item ativo do menu, com fundo branco a 12% |
 | `--stbp-th-fundo` | `#f7f8fa` | `#161b23` | Fundo do cabeçalho das tabelas |
 | `--stbp-borda` | `#dfe3e8` | `#2b323e` | Filetes divisórios internos |
 | `--stbp-placeholder-*` | cinza-azulado claro | ardósia | Unidade sem foto |
+| `--stbp-destaque-fundo` | `#fbe7a1` | `#5c4a12` | Fundo do trecho encontrado por um filtro (`<mark class="stbp-destaque">`), com o texto na cor normal |
+| `--stbp-selecao-fundo` | `#eaf1fb` | `#17233a` | Fundo das linhas selecionadas na grade de itens do formulário |
+| `--mantine-color-red-light-color` (só no escuro) | — | tom 4 `#ff8787` | Texto de botões vermelhos `subtle` e `light`. O Mantine 9 usa o tom 0 (quase branco), e a ação destrutiva deixava de parecer vermelha |
 
 **Motivos da transferência:**
 
 | Motivo | Cor | Natureza |
 |---|---|---|
-| Entre filiais | marinho | definitiva |
+| Entre filiais | azul | definitiva |
 | Baixa/Descarte | vermelho | definitiva |
 | Manutenção | laranja | temporária |
 | Empréstimo | verde-azulado | temporária |
@@ -79,8 +82,17 @@ As sombras aparecem só em elementos flutuantes (menus, modais). Os cartões nã
   - **Envio ao salvar:** a imagem só é enviada quando o formulário é salvo.
   - **Ajuste:** logo com `contain` (sem cortar), foto com `cover`.
 - **Ações de linha:** ficam num menu "⋯". Ações destrutivas vão por último, separadas por um divisor e em vermelho. Uma ação indisponível aparece desabilitada, com o motivo numa dica (ex.: "Já usada em transferências: bloqueie em vez de excluir").
-- **Menu lateral:** grafite-marinho quase preto. O item ativo é marcado por uma barra neutra de 2 px à esquerda e fundo levemente mais claro. A marca usa símbolo em contorno.
-- **Login:** painel liso em grafite-marinho com filete superior, título, descrição e o aviso "Acesso restrito a usuários autorizados…", sem padrões decorativos.
+- **Filtro rápido de itens:** no detalhe da transferência, a partir de 6 itens. Filtra na hora, sem ir à API, por descrição, patrimônio (parcial ou "S/P"), observação ou nº do item. A busca ignora acentos e maiúsculas, e todos os termos precisam casar. Os trechos encontrados ficam destacados, o cabeçalho mostra "10 de 100 itens" e `Esc` limpa a busca. A lógica fica em `componentes/filtroItens.ts`, com testes unitários.
+- **Edição em lote dos itens (formulário):** cada linha tem uma caixa de seleção; Shift+clique seleciona o intervalo desde o último item clicado. O menu "Selecionar" oferece todos, sem observação, sem patrimônio, sem descrição, inverter e nenhum, sempre entre os itens visíveis (respeita o filtro).
+  - **Barra de ações:** com itens selecionados, a barra mostra "N selecionados", "Editar selecionados", "Remover" e "×". Ela fica presa no topo ao rolar listas longas (`stbp-barra-itens`), e as linhas selecionadas ganham o fundo `--stbp-selecao-fundo`.
+  - **"Editar selecionados":** cada campo só é aplicado se estiver marcado.
+    - Observação: só nos itens sem observação (padrão), substituir em todos ou acrescentar ao final, separando com "; ".
+    - Descrição.
+    - Patrimônio: numerar em sequência, na ordem da lista, ou marcar como S/P.
+  - **Pré-visualização:** o botão diz quantos itens mudam de fato ("Aplicar a 19 itens"). A lógica fica em `componentes/edicaoLote.ts`, com testes unitários.
+  - **Filtro no formulário:** recalculado só quando a busca ou a quantidade de itens muda, para que um item não suma da tela enquanto é editado.
+- **Menu lateral:** azul do SENAI-SE, como a barra de navegação do site. O tom é o mesmo dos botões principais, nos dois temas. O item ativo é marcado por uma barra branca de 2 px à esquerda e fundo levemente mais claro. A marca usa símbolo em contorno.
+- **Login:** painel liso em grafite com filete superior no azul institucional, título, descrição e o aviso "Acesso restrito a usuários autorizados…", sem padrões decorativos.
 - **Ícones:** Tabler, traço 1,6, tamanho 16 a 18 px.
 
 ## Painel e gráficos
@@ -93,9 +105,9 @@ Regras seguidas pelo painel (`/painel`) e por qualquer gráfico novo:
   - Rankings → **barras horizontais** com rótulo e valor sempre visíveis, ou tabela com barra embutida.
   - Sem pizza nem rosca.
 - **Um eixo só:** transferências e itens têm escalas diferentes, então ficam em seletor (um ou outro), nunca juntos em dois eixos.
-- **Cor dos dados:** série única em `--stbp-dado` (`#2c5a96` no claro, `#5a86c4` no escuro), com trilho `--stbp-dado-trilho`.
-  - **Por que não o marinho da interface:** ele falhou no piso de croma do validador e seria lido como cinza. O cinza é reservado para o que está fora de foco.
-  - **Validação:** as duas cores passaram no validador de paleta (faixa de luminosidade, croma ≥ 0,1, contraste ≥ 3:1) contra as superfícies reais (`#ffffff` e `#191e27`).
+- **Cor dos dados:** série única em `--stbp-dado`, o próprio azul institucional: tom 7 `#2058ab` no claro e tom 5 `#447fd8` no escuro, com trilho `--stbp-dado-trilho`.
+  - **Croma:** o azul do SENAI tem croma 0,145, acima do piso de 0,1. Por isso, ao contrário do antigo marinho, não é lido como cinza e serve aos gráficos sem uma cor separada. O cinza fica reservado para o que está fora de foco.
+  - **Contraste contra as superfícies reais:** 6,9:1 sobre `#ffffff` e 4,2:1 sobre `#191e27`, ambos acima do mínimo de 3:1.
   - **Motivos:** aparecem com o `Marcador` no rótulo, e as barras continuam numa cor só.
 - **Variação neutra:** "+12% vs. período anterior" usa seta e texto em tom secundário, sem verde ou vermelho, porque mais transferências não é bom nem ruim.
 - **Marcas:**

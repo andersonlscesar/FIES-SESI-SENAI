@@ -37,7 +37,12 @@ export function Lixeira() {
   const excluir = (t: TransferenciaResumo) =>
     modals.openConfirmModal({
       title: `Excluir definitivamente a transferência nº ${t.id}?`,
-      children: <Text size="sm">Esta ação não pode ser desfeita.</Text>,
+      children: (
+        <Text size="sm">
+          O termo e {t.quantidadeItens === 1 ? 'o seu item serão apagados' : `os seus ${t.quantidadeItens} itens serão apagados`}.
+          Esta ação não pode ser desfeita.
+        </Text>
+      ),
       labels: { confirm: 'Excluir definitivamente', cancel: 'Cancelar' },
       confirmProps: { color: 'red' },
       onConfirm: () => executar(() => transferenciasApi.excluirDefinitivamente(t.id), 'Transferência excluída.'),
