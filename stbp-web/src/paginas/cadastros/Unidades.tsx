@@ -69,7 +69,7 @@ export function Unidades() {
     <Stack gap="md">
       <CabecalhoPagina
         titulo="Unidades"
-        descricao="A foto é a capa dos cartões de transferência. Unidades já usadas em transferências não são excluídas: são bloqueadas para novos usos."
+        descricao="A foto é a capa dos cartões de transferência. Unidades já usadas em transferências ou saídas de materiais não são excluídas: são bloqueadas para novos usos."
         acoes={
           <Button leftSection={<IconPlus size={16} />} onClick={() => setEditando('nova')}>
             Nova unidade
@@ -116,7 +116,7 @@ export function Unidades() {
                       {u.ativa ? 'Ativa' : 'Bloqueada'}
                     </Marcador>
                     <Text size="xs" c="dimmed" mt={2}>
-                      {u.emUso ? 'Possui transferências' : 'Sem transferências'}
+                      {u.emUso ? 'Possui movimentações' : 'Sem movimentações'}
                     </Text>
                   </Table.Td>
                   <Table.Td>
@@ -143,7 +143,7 @@ export function Unidades() {
                           </Menu.Item>
                         )}
                         <Menu.Divider />
-                        <Tooltip label="Já usada em transferências: bloqueie em vez de excluir" disabled={!u.emUso} position="left">
+                        <Tooltip label="Já usada em transferências ou saídas de materiais: bloqueie em vez de excluir" disabled={!u.emUso} position="left">
                           <Box>
                             <Menu.Item color="red" leftSection={<IconTrash size={16} />} disabled={u.emUso} onClick={() => excluir(u)}>
                               Excluir

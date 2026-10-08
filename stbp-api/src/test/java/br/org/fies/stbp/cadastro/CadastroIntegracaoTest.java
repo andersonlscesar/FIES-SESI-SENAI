@@ -95,7 +95,7 @@ class CadastroIntegracaoTest extends TesteIntegracao {
         mvc.perform(delete("/api/instituicoes/{id}", SESI).header("Authorization", admin))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value(
-                        "A instituição possui transferências e não pode ser excluída. Bloqueie-a para impedir novos usos"));
+                        "A instituição possui transferências ou saídas de materiais e não pode ser excluída. Bloqueie-a para impedir novos usos"));
         mvc.perform(delete("/api/unidades/{id}", CEFEM).header("Authorization", admin))
                 .andExpect(status().isConflict());
         // Sem transferências: pode excluir (os vínculos com unidades são removidos junto)
@@ -221,7 +221,7 @@ class CadastroIntegracaoTest extends TesteIntegracao {
         mvc.perform(delete("/api/instituicoes/{id}", SESI).header("Authorization", admin))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value(
-                        "A instituição possui transferências e não pode ser excluída. Bloqueie-a para impedir novos usos"));
+                        "A instituição possui transferências ou saídas de materiais e não pode ser excluída. Bloqueie-a para impedir novos usos"));
 
         mvc.perform(post("/api/instituicoes/{id}/bloquear", SESI).header("Authorization", tecnico))
                 .andExpect(status().isForbidden());
@@ -263,7 +263,7 @@ class CadastroIntegracaoTest extends TesteIntegracao {
         mvc.perform(delete("/api/unidades/{id}", CEFEM).header("Authorization", admin))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value(
-                        "A unidade possui transferências e não pode ser excluída. Bloqueie-a para impedir novos usos"));
+                        "A unidade possui transferências ou saídas de materiais e não pode ser excluída. Bloqueie-a para impedir novos usos"));
 
         mvc.perform(post("/api/unidades/{id}/bloquear", CEFEM).header("Authorization", tecnico))
                 .andExpect(status().isForbidden());

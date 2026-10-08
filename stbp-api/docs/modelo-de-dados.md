@@ -9,8 +9,9 @@ O schema oficial é definido pelas migrações Flyway em [`db/migration`](../src
 | V3 | Foto da unidade guardada no banco ([D-031](decisoes.md)) |
 | V4 | Bloqueio de instituição (`ativa`) ([D-033](decisoes.md)) |
 | V5 | Bloqueio de unidade (`ativa`); usuários excluídos com transferências passam a bloqueados ([D-035](decisoes.md)) |
+| V6 | Controle de Saída de Materiais: `saida_material` e `saida_material_item` ([D-044](decisoes.md)) |
 
-O modelo tem 6 tabelas. O banco antigo tinha 16: 8 eram infraestrutura do Laravel e 3 eram do pacote de permissões *spatie*.
+O modelo tem 8 tabelas (6 do termo de transferência e 2 do controle de saída de materiais). O banco antigo tinha 16: 8 eram infraestrutura do Laravel e 3 eram do pacote de permissões *spatie*.
 
 ```mermaid
 erDiagram
@@ -20,6 +21,11 @@ erDiagram
     unidade ||--o{ transferencia : "destino"
     transferencia ||--|{ item : "contém"
     unidade }o--o{ instituicao : "unidade_instituicao"
+    usuario ||--o{ saida_material : "registra"
+    instituicao ||--o{ saida_material : ""
+    unidade ||--o{ saida_material : "origem"
+    unidade |o--o{ saida_material : "destino (ou externo)"
+    saida_material ||--|{ saida_material_item : "contém"
 
     usuario {
         bigint id PK
@@ -65,6 +71,28 @@ erDiagram
         varchar patrimonio
         text observacao
     }
+    saida_material {
+        bigint id PK
+        date data
+        varchar tipo
+        varchar tipo_outro
+        bigint instituicao_id FK
+        bigint origem_id FK
+        bigint destino_id FK
+        varchar destino_externo
+        varchar portador
+        bigint criado_por_id FK
+        timestamptz excluido_em
+    }
+    saida_material_item {
+        bigint id PK
+        bigint saida_id FK
+        smallint ordem
+        varchar descricao
+        varchar area_saida
+        varchar area_entrada
+        text observacao
+    }
 ```
 
 ## Tabelas
@@ -79,7 +107,7 @@ erDiagram
 | `email` | varchar(150) | único, sem diferenciar maiúsculas |
 | `senha_hash` | varchar(100) | BCrypt; os hashes `$2y$` do Laravel são aceitos |
 | `perfil` | varchar(20) | `LEITOR`, `TECNICO`, `ADMIN`, `SUPERADMIN` (ver [perfis-e-permissoes.md](perfis-e-permissoes.md)) |
-| `status` | varchar(20) | `ATIVO`, `BLOQUEADO`, `EXCLUIDO`. `EXCLUIDO` (lixeira) só para quem nunca criou transferências |
+| `status` | varchar(20) | `ATIVO`, `BLOQUEADO`, `EXCLUIDO`. `EXCLUIDO` (lixeira) só para quem nunca criou transferências nem saídas de materiais |
 | `trocar_senha` | boolean | obriga a trocar a senha no próximo acesso (primeiro login ou senha redefinida por admin) |
 | `criado_em`, `atualizado_em` | timestamptz | |
 
@@ -142,6 +170,37 @@ Associação N:N que informa quais unidades pertencem a cada instituição. Serv
 | `descricao` | varchar(200) | |
 | `patrimonio` | varchar(150) | `NULL` = sem patrimônio (aparece como "S/P"). Texto livre: alguns itens antigos têm vários números ou um número de série |
 | `observacao` | text | |
+
+### `saida_material`
+
+Controle de Saída de Materiais da Unidade (formulário FM-072-UOP-04). É uma modalidade mais simples que o termo de transferência: sem responsáveis de envio e recebimento e **sem patrimônio nos itens**, porque são materiais não patrimoniados. Tem numeração própria.
+
+| Coluna | Tipo | Observação |
+|---|---|---|
+| `id` | bigint | número da saída (sequência própria, separada da das transferências) |
+| `data` | date | |
+| `tipo` | varchar(20) | `PERMANENTE`, `TEMPORARIO`, `MANUTENCAO`, `EVENTO` ou `OUTRO` (os quadros do formulário) |
+| `tipo_outro` | varchar(150) | "Outro, qual: …". Preenchido **se e somente se** `tipo = OUTRO` (restrição `ck_saida_tipo_outro`) |
+| `instituicao_id` | FK `instituicao` | |
+| `origem_id` | FK `unidade` | "DE" |
+| `destino_id` | FK `unidade`, opcional | "PARA" quando o destino é uma unidade |
+| `destino_externo` | varchar(200), opcional | "PARA" quando o material sai da instituição (assistência técnica, local de evento). **Exatamente um** entre `destino_id` e `destino_externo` (restrição `ck_saida_destino`) |
+| `portador` | varchar(150), opcional | nome impresso sob a linha "Assinatura do Portador do Equipamento" |
+| `criado_por_id` | FK `usuario` | |
+| `criado_em`, `atualizado_em` | timestamptz | |
+| `excluido_em` | timestamptz | preenchido = na lixeira |
+
+### `saida_material_item`
+
+| Coluna | Tipo | Observação |
+|---|---|---|
+| `id` | bigint | |
+| `saida_id` | FK `saida_material` | `ON DELETE CASCADE` |
+| `ordem` | smallint | número do item no formulário |
+| `descricao` | varchar(200) | |
+| `area_saida` | varchar(150) | setor, oficina ou laboratório de onde o material sai |
+| `area_entrada` | varchar(150) | setor, oficina ou laboratório para onde vai |
+| `observacao` | text | no temporário, a data prevista de retorno |
 
 ## Correspondência com o banco antigo
 

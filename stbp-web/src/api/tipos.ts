@@ -35,7 +35,7 @@ export interface Usuario {
   perfil: Perfil
   status: StatusUsuario
   trocarSenha: boolean
-  /** Criou transferências: não pode ser excluído, só bloqueado. */
+  /** Criou transferências ou saídas de materiais: não pode ser excluído, só bloqueado. */
   emUso: boolean
   criadoEm: string
   atualizadoEm: string
@@ -58,7 +58,7 @@ export interface Instituicao {
   logoUrl: string | null
   /** false = bloqueada para novas transferências (o histórico continua). */
   ativa: boolean
-  /** Já usada em transferências: não pode ser excluída, só bloqueada. */
+  /** Já usada em transferências ou saídas de materiais: não pode ser excluída, só bloqueada. */
   emUso: boolean
 }
 
@@ -147,6 +147,73 @@ export interface FiltroTransferencia {
   page?: string
 }
 
+// ---- Controle de Saída de Materiais (FM-072-UOP-04)
+
+export type TipoSaida = 'PERMANENTE' | 'TEMPORARIO' | 'MANUTENCAO' | 'EVENTO' | 'OUTRO'
+
+export interface SaidaResumo {
+  id: number
+  data: string
+  tipo: TipoSaida
+  /** Só quando tipo = OUTRO ("Outro, qual: ..."). */
+  tipoOutro: string | null
+  instituicao: Referencia
+  origem: UnidadeReferencia
+  /** Unidade de destino; null quando o destino é externo. */
+  destino: UnidadeReferencia | null
+  destinoExterno: string | null
+  /** Nome do destino, unidade ou externo. */
+  nomeDestino: string
+  portador: string | null
+  criadoPor: Referencia
+  quantidadeItens: number
+  criadoEm: string
+  excluidoEm: string | null
+}
+
+/** Item do controle de saída: sem patrimônio, com as áreas de saída e entrada. */
+export interface ItemSaida extends Omit<Item, 'patrimonio'> {
+  areaSaida: string | null
+  areaEntrada: string | null
+}
+
+export interface SaidaDetalhe extends Omit<SaidaResumo, 'quantidadeItens'> {
+  itens: ItemSaida[]
+  atualizadoEm: string
+  podeAlterar: boolean
+}
+
+export interface ItemSaidaPedido extends Omit<ItemPedido, 'patrimonio'> {
+  areaSaida: string
+  areaEntrada: string
+}
+
+export interface SaidaPedido {
+  data: string
+  tipo: TipoSaida
+  tipoOutro: string | null
+  instituicaoId: number
+  origemId: number
+  /** Uma unidade OU um destino externo, nunca os dois. */
+  destinoId: number | null
+  destinoExterno: string | null
+  portador: string | null
+  itens: ItemSaidaPedido[]
+}
+
+export interface FiltroSaida {
+  busca?: string
+  instituicaoId?: string
+  origemId?: string
+  destinoId?: string
+  criadoPorId?: string
+  tipo?: string
+  dataInicial?: string
+  dataFinal?: string
+  minhas?: string
+  page?: string
+}
+
 // ---- Painel de análise (GET /api/painel)
 
 export interface PainelContagem {
@@ -175,4 +242,35 @@ export interface Painel {
   principaisRotas: { origem: string; destino: string; transferencias: number; itens: number }[]
   principaisEmissores: PainelContagem[]
   bensMaisTransferidos: { descricao: string; itens: number; transferencias: number }[]
+}
+
+// ---- Painel de saídas de materiais (GET /api/painel/saidas)
+
+export interface PainelSaidasContagem {
+  id: number
+  nome: string
+  saidas: number
+  itens: number
+}
+
+export interface PainelSaidas {
+  periodo: { inicio: string; fim: string }
+  periodoAnterior: { inicio: string; fim: string }
+  resumo: {
+    saidas: number
+    itens: number
+    paraDestinoExterno: number
+    unidadesEnvolvidas: number
+    saidasAnterior: number
+    itensAnterior: number
+  }
+  porMes: { mes: string; saidas: number; itens: number }[]
+  porTipo: { tipo: TipoSaida; descricao: string; saidas: number; itens: number }[]
+  porInstituicao: PainelSaidasContagem[]
+  principaisOrigens: PainelSaidasContagem[]
+  /** Unidades e destinos externos ({@code externo}) no mesmo ranking. */
+  principaisDestinos: { nome: string; externo: boolean; saidas: number; itens: number }[]
+  principaisRotas: { origem: string; destino: string; destinoExterno: boolean; saidas: number; itens: number }[]
+  principaisEmissores: PainelSaidasContagem[]
+  materiaisMaisFrequentes: { descricao: string; itens: number; saidas: number }[]
 }

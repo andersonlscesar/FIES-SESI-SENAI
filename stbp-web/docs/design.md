@@ -83,6 +83,7 @@ As sombras aparecem só em elementos flutuantes (menus, modais). Os cartões nã
   - **Ajuste:** logo com `contain` (sem cortar), foto com `cover`.
 - **Ações de linha:** ficam num menu "⋯". Ações destrutivas vão por último, separadas por um divisor e em vermelho. Uma ação indisponível aparece desabilitada, com o motivo numa dica (ex.: "Já usada em transferências: bloqueie em vez de excluir").
 - **Filtro rápido de itens:** no detalhe da transferência, a partir de 6 itens. Filtra na hora, sem ir à API, por descrição, patrimônio (parcial ou "S/P"), observação ou nº do item. A busca ignora acentos e maiúsculas, e todos os termos precisam casar. Os trechos encontrados ficam destacados, o cabeçalho mostra "10 de 100 itens" e `Esc` limpa a busca. A lógica fica em `componentes/filtroItens.ts`, com testes unitários.
+- **Grade de itens (`componentes/itens/GradeItens.tsx`):** é a mesma nos formulários de transferência e de saída de materiais, e só as colunas mudam (`ColunaItem[]`). Na saída, as áreas de saída e entrada aparecem também no gerador e na edição em lote. Sem coluna de patrimônio, a grade troca o gerador em sequência por "Adicionar vários iguais" e esconde as opções de patrimônio.
 - **Edição em lote dos itens (formulário):** cada linha tem uma caixa de seleção; Shift+clique seleciona o intervalo desde o último item clicado. O menu "Selecionar" oferece todos, sem observação, sem patrimônio, sem descrição, inverter e nenhum, sempre entre os itens visíveis (respeita o filtro).
   - **Barra de ações:** com itens selecionados, a barra mostra "N selecionados", "Editar selecionados", "Remover" e "×". Ela fica presa no topo ao rolar listas longas (`stbp-barra-itens`), e as linhas selecionadas ganham o fundo `--stbp-selecao-fundo`.
   - **"Editar selecionados":** cada campo só é aplicado se estiver marcado.
@@ -118,6 +119,7 @@ Regras seguidas pelo painel (`/painel`) e por qualquer gráfico novo:
   - **Tabela equivalente:** todo gráfico tem uma ("Ver tabela").
   - **Valores sem depender do mouse:** os rankings já mostram os valores, e o tooltip só complementa.
 - **Filtros:** ficam numa linha acima de tudo e na URL, e recortam todos os números do painel juntos. Ao recarregar, o painel anterior fica esmaecido, sem esqueleto nem salto de layout.
+- **Visões:** transferências e saídas de materiais nunca se somam. O seletor "Movimentação", primeiro da linha de filtros, troca o painel inteiro, e o recorte de período e instituição se mantém. Nas saídas, o destino externo leva o ícone de alfinete (`IconMapPin`, como no detalhe da saída) antes do nome, em vez de um sufixo de texto que seria cortado nos nomes longos.
 
 ## Tema claro e escuro
 

@@ -162,7 +162,7 @@ class UsuarioIntegracaoTest extends TesteIntegracao {
         mvc.perform(delete("/api/usuarios/{id}", tecnico.getId()).header("Authorization", admin))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value(
-                        "O usuário possui transferências e não pode ser excluído. Bloqueie-o para impedir o acesso"));
+                        "O usuário possui transferências ou saídas de materiais e não pode ser excluído. Bloqueie-o para impedir o acesso"));
         mvc.perform(post("/api/usuarios/{id}/bloquear", tecnico.getId()).header("Authorization", admin))
                 .andExpect(jsonPath("$.status").value("BLOQUEADO"));
     }

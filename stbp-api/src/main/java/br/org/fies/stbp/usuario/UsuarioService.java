@@ -93,7 +93,7 @@ public class UsuarioService {
     public UsuarioResponse excluir(Long id, UsuarioAutenticado autor) {
         if (carregarParaAlterar(id, autor).isEmUso()) {
             throw new ConflitoException(
-                    "O usuário possui transferências e não pode ser excluído. Bloqueie-o para impedir o acesso");
+                    "O usuário possui transferências ou saídas de materiais e não pode ser excluído. Bloqueie-o para impedir o acesso");
         }
         return transicionar(id, autor, Set.of(StatusUsuario.ATIVO, StatusUsuario.BLOQUEADO), StatusUsuario.EXCLUIDO,
                 "O usuário já está excluído");

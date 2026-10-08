@@ -19,6 +19,10 @@ Cada usuário tem **um** perfil. Os perfis são cumulativos: cada um pode tudo o
 - **Exclusão definitiva** só a partir da lixeira.
 - **Edição** só fora da lixeira.
 
+## Saídas de materiais
+
+Seguem **as mesmas regras das transferências**: todos consultam e emitem o formulário em PDF; o TECNICO cria e altera só as próprias; o ADMIN altera todas; a lixeira e a exclusão definitiva funcionam igual.
+
 ## Instituições e unidades
 
 | Ação | LEITOR | TECNICO | ADMIN | SUPERADMIN |
@@ -27,7 +31,7 @@ Cada usuário tem **um** perfil. Os perfis são cumulativos: cada um pode tudo o
 | Criar, alterar e excluir instituições e unidades; enviar ou remover a logo e as fotos das unidades | | | ✅ | ✅ |
 | Bloquear ou desbloquear instituições e unidades | | | ✅ | ✅ |
 
-- **Regra geral (D-035):** instituições, unidades e usuários com vínculos (transferências) **não podem ser excluídos**, só bloqueados.
+- **Regra geral (D-035):** instituições, unidades e usuários com vínculos (transferências ou saídas de materiais) **não podem ser excluídos**, só bloqueados.
 - **Instituição ou unidade bloqueada:** não aparece no formulário de novas transferências, e a API recusa o uso dela. Transferências antigas continuam visíveis, filtráveis e editáveis (sem trocar a instituição ou unidade bloqueada), e os termos continuam sendo emitidos.
 
 As imagens (`GET /api/instituicoes/{id}/logo` e `GET /api/unidades/{id}/imagem`) são públicas.
@@ -50,7 +54,7 @@ As imagens (`GET /api/instituicoes/{id}/logo` e `GET /api/unidades/{id}/imagem`)
 - **Transições de status permitidas:**
   - ATIVO → BLOQUEADO (bloquear)
   - BLOQUEADO → ATIVO (desbloquear)
-  - ATIVO ou BLOQUEADO → EXCLUIDO (excluir): **só para quem nunca criou transferências**; quem tem transferências é bloqueado (D-035)
+  - ATIVO ou BLOQUEADO → EXCLUIDO (excluir): **só para quem nunca registrou transferências nem saídas de materiais**; quem tem registros é bloqueado (D-035)
   - EXCLUIDO → ATIVO (restaurar)
 
 ## Situação da implementação
@@ -61,6 +65,8 @@ As imagens (`GET /api/instituicoes/{id}/logo` e `GET /api/unidades/{id}/imagem`)
 | Transferências | ✅ implementado e testado | `transferencia/TransferenciaService`; testes em `TransferenciaIntegracaoTest` |
 | Instituições e unidades | ✅ implementado e testado | `cadastro/CadastroService`; testes em `CadastroIntegracaoTest` |
 | Termo em PDF | ✅ implementado e testado | `transferencia/TermoPdf`; testes em `TermoIntegracaoTest` |
+| Saídas de materiais e formulário FM-072-UOP-04 | ✅ implementado e testado | `saida/SaidaService`, `saida/SaidaController`; testes em `SaidaIntegracaoTest` |
+| Painel de análise (transferências e saídas) | ✅ implementado e testado | `painel/`; testes em `PainelIntegracaoTest` e `PainelSaidasIntegracaoTest` |
 
 ### Como funciona no código
 

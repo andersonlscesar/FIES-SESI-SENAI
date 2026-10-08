@@ -171,7 +171,7 @@ test('instituição: logo no cadastro, bloqueio e exclusão', async ({ page }) =
   await modal.getByRole('button', { name: 'Salvar' }).click()
   await expect(page.getByRole('img', { name: `Logo ${nome}` })).toBeVisible()
   const linha = page.getByRole('row', { name: new RegExp(nome) })
-  await expect(linha.getByText('Sem transferências')).toBeVisible()
+  await expect(linha.getByText('Sem movimentações')).toBeVisible()
 
   // Bloqueada, some do formulário de nova transferência
   await linha.getByRole('button', { name: `Ações para ${nome}` }).click()
@@ -331,6 +331,77 @@ test('edição em lote: observação esquecida, patrimônio por intervalo e filt
   await expect(page.getByRole('heading', { name: 'Lixeira' })).toBeVisible()
 })
 
+test('controle de saída de materiais: destino externo, áreas, edição em lote e lixeira', async ({ page }) => {
+  await entrar(page)
+  await page.goto('/saidas/nova')
+  await expect(page.getByRole('heading', { name: 'Nova saída de materiais' })).toBeVisible()
+  await escolher(page, 'Tipo de saída', 'Manutenção')
+  await escolher(page, 'Instituição', 'SENAI')
+  await escolher(page, 'De (unidade de origem)', 'SEDE')
+  await page.getByText('Destino externo', { exact: true }).click()
+  await page.getByLabel('Para (destino externo)').fill('Assistência Técnica XYZ (e2e)')
+  await page.getByLabel('Portador do equipamento').fill('joão portador')
+
+  // Nesta modalidade não há patrimônio: nem coluna, nem sequência no gerador
+  await expect(page.getByLabel('Patrimônio do item 1', { exact: true })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Adicionar vários iguais' }).click()
+  const gerador = page.getByRole('dialog', { name: 'Adicionar vários itens iguais' })
+  await expect(gerador.getByLabel('Patrimônio inicial')).toHaveCount(0)
+  await gerador.getByLabel('Descrição dos itens').fill('Projetor Epson')
+  await gerador.getByLabel('Quantidade').fill('8')
+  await gerador.getByLabel('Área de saída (opcional)').fill('Laboratório 16')
+  await gerador.getByRole('button', { name: 'Gerar 8 itens' }).click()
+  await expect(page.getByLabel('Área de saída do item 8', { exact: true })).toHaveValue('Laboratório 16')
+  await expect(page.getByText('Informe a descrição')).toHaveCount(0)
+
+  // Esqueci a área de entrada e a data de retorno: edição em lote de todos
+  await page.getByLabel('Selecionar todos os itens visíveis').check()
+  await page.getByRole('button', { name: 'Editar selecionados' }).click()
+  const lote = page.getByRole('dialog', { name: 'Editar 8 itens selecionados' })
+  await lote.getByLabel('Texto da observação').fill('Retorno previsto em 20/10/2026')
+  await lote.getByRole('checkbox', { name: 'Área de entrada' }).check()
+  await lote.getByLabel('Novo valor de área de entrada').fill('Assistência técnica')
+  await lote.getByRole('button', { name: 'Aplicar a 8 itens' }).click()
+  await expect(page.getByLabel('Área de entrada do item 5', { exact: true })).toHaveValue('Assistência técnica')
+  await expect(page.getByLabel('Observação do item 5', { exact: true })).toHaveValue('Retorno previsto em 20/10/2026')
+  await capturar(page, '19-saida-formulario')
+
+  await page.getByRole('button', { name: 'Registrar saída' }).click()
+  await expect(page.getByRole('heading', { name: /Saída de materiais nº \d+/ })).toBeVisible()
+  await expect(page.getByText('Manutenção').first()).toBeVisible()
+  await expect(page.getByText('Assistência Técnica XYZ (e2e)').first()).toBeVisible()
+  await expect(page.getByText('João Portador')).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Patrimônio' })).toHaveCount(0)
+  await page.getByLabel('Filtrar itens').fill('08')
+  await expect(page.getByText('1 de 8 itens')).toBeVisible()
+  await capturar(page, '20-saida-detalhe')
+  const numero = (await page.getByRole('heading', { name: /Saída de materiais nº/ }).textContent())!.match(/\d+/)![0]
+
+  // Listagem e busca por destino externo
+  await page.goto('/saidas')
+  await page.getByPlaceholder(/Buscar por número/).fill('xyz (e2e)')
+  await expect(page.getByRole('cell', { name: numero, exact: true })).toBeVisible()
+  await capturar(page, '21-saidas-lista')
+
+  // Painel: a saída entra na visão "Saídas de materiais", com o destino externo no ranking
+  await page.goto('/painel?visao=saidas')
+  await expect(page.getByText('Para destinos externos')).toBeVisible()
+  await expect(page.getByText('Destinos mais frequentes')).toBeVisible()
+  await expect(page.getByText('Assistência Técnica XYZ (e2e)').first()).toBeVisible()
+  await capturar(page, '22-painel-saidas')
+
+  // Lixeira (aba de saídas) e exclusão definitiva
+  await page.goto(`/saidas/${numero}`)
+  await page.getByRole('button', { name: 'Mover para a lixeira' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Mover para a lixeira' }).click()
+  await page.goto('/transferencias/lixeira?tipo=saidas')
+  await expect(page.getByRole('cell', { name: numero, exact: true })).toBeVisible()
+  const linha = page.getByRole('row').filter({ has: page.getByRole('cell', { name: numero, exact: true }) })
+  await linha.getByRole('button', { name: 'Excluir definitivamente' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Excluir definitivamente' }).click()
+  await expect(page.getByRole('cell', { name: numero, exact: true })).toHaveCount(0)
+})
+
 test('unidades e usuários com vínculos não são excluídos, só bloqueados', async ({ page }) => {
   const nome = `UNIDADE E2E ${Date.now()}`
   await entrar(page)
@@ -345,7 +416,7 @@ test('unidades e usuários com vínculos não são excluídos, só bloqueados', 
   await page.keyboard.press('Escape')
   await modal.getByRole('button', { name: 'Salvar' }).click()
   const linha = page.getByRole('row', { name: new RegExp(nome) })
-  await expect(linha.getByText('Sem transferências')).toBeVisible()
+  await expect(linha.getByText('Sem movimentações')).toBeVisible()
 
   await linha.getByRole('button', { name: `Ações para ${nome}` }).click()
   await page.getByRole('menuitem', { name: 'Bloquear para uso' }).click()
@@ -407,6 +478,15 @@ test('painel de análise: indicadores, gráfico, tabela e filtros', async ({ pag
   await expect(page).toHaveURL(/periodo=tudo/)
   await expect(page.getByRole('combobox', { name: 'Período' })).toHaveValue('Todo o histórico')
   await expect(page.getByText('Por instituição')).toBeVisible()
+
+  // Troca para as saídas de materiais sem perder o recorte
+  await page.locator('label', { hasText: /^Saídas de materiais$/ }).click()
+  await expect(page).toHaveURL(/visao=saidas/)
+  await expect(page).toHaveURL(/periodo=tudo/)
+  await expect(page).toHaveURL(/instituicao=2/)
+  await expect(page.getByText('Por tipo de saída')).toBeVisible()
+  await page.locator('label', { hasText: /^Transferências$/ }).click()
+  await expect(page.getByText('Itens transferidos')).toBeVisible()
 
   await page.getByRole('button', { name: 'Usar tema escuro' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-mantine-color-scheme', 'dark')

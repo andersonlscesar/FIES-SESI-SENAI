@@ -7,12 +7,19 @@ export interface ItemEditavel {
   descricao: string
   patrimonio: string
   observacao: string
+  /** Só no Controle de Saída de Materiais. */
+  areaSaida?: string
+  areaEntrada?: string
 }
+
+/** Campos de texto livre que a edição em lote substitui por um valor único. */
+export type CampoTexto = 'descricao' | 'areaSaida' | 'areaEntrada'
 
 export type ModoObservacao = 'substituir' | 'vazias' | 'acrescentar'
 
 export interface AlteracoesLote {
-  descricao?: string
+  /** Substitui o campo pelo valor informado (vazio apaga, exceto a descrição, que é obrigatória). */
+  textos?: Partial<Record<CampoTexto, string>>
   /** Numera em sequência, na ordem da lista, a partir de {@code inicial}; ou marca como sem patrimônio. */
   patrimonio?: { modo: 'sequencia'; inicial: string } | { modo: 'sp' }
   observacao?: { modo: ModoObservacao; texto: string }
@@ -59,11 +66,13 @@ export function aplicarEmLote<T extends ItemEditavel>(itens: T[], selecionados: 
   return itens.map((item) => {
     if (!selecionados.has(item.chave)) return item
     const novo = { ...item }
-    if (alteracoes.descricao !== undefined) novo.descricao = alteracoes.descricao.trim()
+    for (const [campo, valor] of Object.entries(alteracoes.textos ?? {}) as [CampoTexto, string][]) {
+      novo[campo] = valor.trim()
+    }
     if (alteracoes.patrimonio) novo.patrimonio = patrimonios ? patrimonios[posicao] : 'S/P'
     if (alteracoes.observacao) novo.observacao = novaObservacao(item.observacao, alteracoes.observacao)
     posicao++
-    const mudou = novo.descricao !== item.descricao || novo.patrimonio !== item.patrimonio || novo.observacao !== item.observacao
+    const mudou = (['descricao', 'patrimonio', 'observacao', 'areaSaida', 'areaEntrada'] as const).some((c) => novo[c] !== item[c])
     return mudou ? novo : item
   })
 }

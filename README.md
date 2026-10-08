@@ -1,16 +1,19 @@
 # STBP: Sistema de Transferência de Bens Patrimoniais
 
-Reimplementação do sistema de transferências de bens patrimoniais (FIES / SESI / SENAI), que antes era feito em Laravel + MySQL.
+Reimplementação do sistema de transferências de bens patrimoniais (FIES / SESI / SENAI), que antes era feito em Laravel + MySQL. Além das transferências (termo em PDF), registra as saídas de materiais (formulário FM-072-UOP-04) e tem um painel de análise.
 
 | Pasta | Conteúdo |
 |---|---|
 | [stbp-api/](stbp-api/) | API em Spring Boot + PostgreSQL: regras, login, termo em PDF e **migração dos dados** do sistema antigo. Documentação em [stbp-api/docs/](stbp-api/docs/) |
 | [stbp-web/](stbp-web/) | Telas em React + TypeScript |
 | [implantacao/](implantacao/) | Docker Compose de produção, backup e **guia de implantação e virada** |
+| [documentacao/](documentacao/) | **[STBP-documentacao.pdf](documentacao/STBP-documentacao.pdf)**: toda a documentação do projeto e da API num PDF, e o capítulo de visão geral |
 | `fies-main/` | Código do sistema Laravel antigo (referência; fonte das logos na migração) |
 | `BKP_STBP/` | Dump do banco MySQL antigo |
 
 ## Por onde começar
+
+- **Visão completa, num arquivo só:** [documentacao/STBP-documentacao.pdf](documentacao/STBP-documentacao.pdf). Depois de alterar qualquer `README.md` ou `docs/`, gere o PDF de novo com `npm run docs:pdf` na pasta `stbp-web`.
 
 - **Instalar no servidor e fazer a virada:** [implantacao/README.md](implantacao/README.md)
 - **Desenvolver:** [stbp-api/README.md](stbp-api/README.md) e [stbp-web/README.md](stbp-web/README.md)

@@ -1,20 +1,20 @@
 import { BarChart } from '@mantine/charts'
-import { Alert, Button, Group, Paper, SegmentedControl, Select, SimpleGrid, Stack, Table, Text } from '@mantine/core'
+import { Alert, Button, Center, Group, Input, Loader, Paper, SegmentedControl, Select, SimpleGrid, Stack, Table, Text } from '@mantine/core'
 import { DatePickerInput } from '@mantine/dates'
-import { IconChartBar, IconTable } from '@tabler/icons-react'
+import { IconChartBar, IconMapPin, IconTable } from '@tabler/icons-react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 import { painelApi } from '../api/recursos'
-import type { Painel as DadosPainel } from '../api/tipos'
+import type { Painel as DadosPainel, PainelSaidas } from '../api/tipos'
 import { CabecalhoPagina } from '../componentes/CabecalhoPagina'
 import { useInstituicoes } from '../componentes/consultas'
 import { Marcador } from '../componentes/Marcador'
 import { CartaoPainel, formatarNumero, Indicador, ListaBarras } from '../componentes/painel/Componentes'
 import classes from '../componentes/painel/painel.module.css'
-import { formatarData, mensagemDeErro, MOTIVOS } from '../componentes/util'
+import { formatarData, mensagemDeErro, MOTIVOS, TIPOS_SAIDA } from '../componentes/util'
 
 type Preset = '12m' | 'ano' | 'anoAnterior' | 'tudo' | 'personalizado'
 
@@ -45,10 +45,25 @@ function intervalo(preset: Preset, inicio?: string | null, fim?: string | null) 
   }
 }
 
+type Visao = 'transferencias' | 'saidas'
+
+const VISOES: { value: Visao; label: string }[] = [
+  { value: 'transferencias', label: 'Transferências' },
+  { value: 'saidas', label: 'Saídas de materiais' },
+]
+
+const DESCRICOES: Record<Visao, string> = {
+  transferencias: 'Visão geral das transferências de bens patrimoniais. Transferências na lixeira não são consideradas.',
+  saidas: 'Visão geral do controle de saída de materiais (FM-072-UOP-04). Saídas na lixeira não são consideradas.',
+}
+
+const formatarDecimal = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
+
 const rotuloMes = (mes: string) => dayjs(`${mes}-01`).format('MMM/YY').replace('.', '')
 
 export function Painel() {
   const [parametros, setParametros] = useSearchParams()
+  const visao: Visao = parametros.get('visao') === 'saidas' ? 'saidas' : 'transferencias'
   const preset = (parametros.get('periodo') as Preset | null) ?? '12m'
   const inicio = parametros.get('inicio')
   const fim = parametros.get('fim')
@@ -70,24 +85,41 @@ export function Painel() {
       { replace: true },
     )
 
+  // Uma consulta por visão: cada uma mantém o próprio quadro anterior enquanto recarrega
   const filtro = { ...intervalo(preset, inicio, fim), instituicaoId }
-  const consulta = useQuery({
+  const periodoPronto = preset !== 'personalizado' || Boolean(inicio && fim)
+  const transferencias = useQuery({
     queryKey: ['painel', filtro],
     queryFn: () => painelApi.gerar(filtro),
     placeholderData: keepPreviousData,
-    enabled: preset !== 'personalizado' || Boolean(inicio && fim),
+    enabled: visao === 'transferencias' && periodoPronto,
   })
+  const saidas = useQuery({
+    queryKey: ['painel-saidas', filtro],
+    queryFn: () => painelApi.saidas(filtro),
+    placeholderData: keepPreviousData,
+    enabled: visao === 'saidas' && periodoPronto,
+  })
+  const consulta = visao === 'saidas' ? saidas : transferencias
   const dados = consulta.data
 
   return (
     <Stack gap="md">
       <CabecalhoPagina
         titulo="Painel"
-        descricao="Visão geral das transferências de bens patrimoniais. Transferências na lixeira não são consideradas."
+        descricao={DESCRICOES[visao]}
       />
 
       {/* Filtros: uma linha acima de tudo; todos os números abaixo respondem ao mesmo recorte */}
       <Group gap="sm" align="flex-end" wrap="wrap">
+        <Input.Wrapper label="Movimentação">
+          <SegmentedControl
+            display="flex"
+            data={VISOES}
+            value={visao}
+            onChange={(v) => alterar({ visao: v === 'saidas' ? v : null })}
+          />
+        </Input.Wrapper>
         <Select
           label="Período"
           w={200}
@@ -131,9 +163,18 @@ export function Painel() {
         </Text>
       )}
 
+      {periodoPronto && consulta.isPending && (
+        <Center py="xl">
+          <Loader />
+        </Center>
+      )}
       {dados && (
         <div className={consulta.isPlaceholderData || consulta.isFetching ? classes.recarregando : undefined}>
-          <ConteudoPainel dados={dados} />
+          {visao === 'saidas' ? (
+            <ConteudoPainelSaidas dados={saidas.data as PainelSaidas} />
+          ) : (
+            <ConteudoPainel dados={transferencias.data as DadosPainel} />
+          )}
         </div>
       )}
     </Stack>
@@ -166,7 +207,10 @@ function ConteudoPainel({ dados }: { dados: DadosPainel }) {
         />
       </SimpleGrid>
 
-      <EvolucaoMensal dados={dados} />
+      <EvolucaoMensal
+        nome="Transferências"
+        meses={dados.porMes.map((m) => ({ mes: m.mes, quantidade: m.transferencias, itens: m.itens }))}
+      />
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
         <CartaoPainel titulo="Por motivo" descricao="Transferências no período">
@@ -232,12 +276,114 @@ function ConteudoPainel({ dados }: { dados: DadosPainel }) {
   )
 }
 
-/** Colunas por mês, uma série por vez (transferências OU itens: escalas diferentes nunca dividem o eixo). */
-function EvolucaoMensal({ dados }: { dados: DadosPainel }) {
-  const [medida, setMedida] = useState<'transferencias' | 'itens'>('transferencias')
+function ConteudoPainelSaidas({ dados }: { dados: PainelSaidas }) {
+  const r = dados.resumo
+  const percentualExterno = r.saidas === 0 ? 0 : (r.paraDestinoExterno / r.saidas) * 100
+
+  return (
+    <Stack gap="md">
+      <SimpleGrid cols={{ base: 1, xs: 2, lg: 4 }} spacing="md">
+        <Indicador rotulo="Saídas de materiais" valor={formatarNumero(r.saidas)} atual={r.saidas} anterior={r.saidasAnterior} />
+        <Indicador rotulo="Materiais" valor={formatarNumero(r.itens)} atual={r.itens} anterior={r.itensAnterior} />
+        <Indicador
+          rotulo="Para destinos externos"
+          valor={`${formatarDecimal(percentualExterno)}%`}
+          complemento={`${formatarNumero(r.paraDestinoExterno)} de ${formatarNumero(r.saidas)} saídas foram para fora das unidades`}
+        />
+        <Indicador
+          rotulo="Unidades envolvidas"
+          valor={formatarNumero(r.unidadesEnvolvidas)}
+          complemento={r.saidas > 0 ? `${formatarDecimal(r.itens / r.saidas)} materiais por saída, em média` : undefined}
+        />
+      </SimpleGrid>
+
+      <EvolucaoMensal nome="Saídas" meses={dados.porMes.map((m) => ({ mes: m.mes, quantidade: m.saidas, itens: m.itens }))} />
+
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+        <CartaoPainel titulo="Por tipo de saída" descricao="Saídas no período">
+          <ListaBarras
+            unidade="saídas"
+            total={r.saidas}
+            linhas={dados.porTipo.map((t) => ({
+              chave: t.tipo,
+              rotuloTexto: t.descricao,
+              rotulo: <Marcador cor={TIPOS_SAIDA[t.tipo].cor}>{t.descricao}</Marcador>,
+              valor: t.saidas,
+            }))}
+          />
+        </CartaoPainel>
+        <CartaoPainel titulo="Por instituição" descricao="Saídas no período">
+          <ListaBarras
+            unidade="saídas"
+            total={r.saidas}
+            linhas={dados.porInstituicao.map((i) => ({ chave: String(i.id), rotuloTexto: i.nome, rotulo: i.nome, valor: i.saidas }))}
+          />
+        </CartaoPainel>
+        <CartaoPainel titulo="Unidades de onde mais saem materiais" descricao="Saídas como origem">
+          <ListaBarras
+            unidade="saídas"
+            linhas={dados.principaisOrigens.map((u) => ({ chave: String(u.id), rotuloTexto: u.nome, rotulo: u.nome, valor: u.saidas }))}
+          />
+        </CartaoPainel>
+        <CartaoPainel titulo="Destinos mais frequentes" descricao="Unidades e destinos externos (com o alfinete)">
+          <ListaBarras
+            unidade="saídas"
+            linhas={dados.principaisDestinos.map((d) => ({
+              chave: `${d.externo ? 'externo' : 'unidade'}:${d.nome}`,
+              rotuloTexto: d.externo ? `${d.nome} (destino externo)` : d.nome,
+              rotulo: d.externo ? (
+                <>
+                  <IconMapPin size={13} stroke={1.8} aria-hidden style={{ verticalAlign: -2, marginRight: 4 }} />
+                  {d.nome}
+                </>
+              ) : (
+                d.nome
+              ),
+              valor: d.saidas,
+            }))}
+          />
+        </CartaoPainel>
+      </SimpleGrid>
+
+      <CartaoPainel titulo="Principais rotas" descricao="Pares origem → destino mais frequentes">
+        <TabelaComBarra
+          colunas={['Origem → destino', 'Saídas', 'Materiais']}
+          linhas={dados.principaisRotas.map((rota) => ({
+            chave: `${rota.origem}>${rota.destinoExterno ? 'externo:' : ''}${rota.destino}`,
+            rotulo: `${rota.origem} → ${rota.destino}${rota.destinoExterno ? ' (externo)' : ''}`,
+            valor: rota.saidas,
+            extra: rota.itens,
+          }))}
+        />
+      </CartaoPainel>
+
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+        <CartaoPainel titulo="Materiais mais frequentes" descricao="Itens agrupados pela descrição">
+          <TabelaComBarra
+            colunas={['Descrição do material', 'Itens', 'Saídas']}
+            linhas={dados.materiaisMaisFrequentes.map((m) => ({ chave: m.descricao, rotulo: m.descricao, valor: m.itens, extra: m.saidas }))}
+          />
+        </CartaoPainel>
+        <CartaoPainel titulo="Quem mais registra" descricao="Saídas por usuário emissor">
+          <ListaBarras
+            unidade="saídas"
+            linhas={dados.principaisEmissores.map((u) => ({ chave: String(u.id), rotuloTexto: u.nome, rotulo: u.nome, valor: u.saidas }))}
+          />
+        </CartaoPainel>
+      </SimpleGrid>
+    </Stack>
+  )
+}
+
+/**
+ * Colunas por mês, uma série por vez (registros OU itens: escalas diferentes nunca dividem o eixo).
+ * {@code nome} é o que se conta: "Transferências" ou "Saídas".
+ */
+function EvolucaoMensal({ nome, meses }: { nome: string; meses: { mes: string; quantidade: number; itens: number }[] }) {
+  const [medida, setMedida] = useState<'quantidade' | 'itens'>('quantidade')
   const [comoTabela, setComoTabela] = useState(false)
-  const nomeMedida = medida === 'transferencias' ? 'Transferências' : 'Itens'
-  const serie = dados.porMes.map((m) => ({ mes: rotuloMes(m.mes), valor: m[medida], transferencias: m.transferencias, itens: m.itens }))
+  const nomeMedida = medida === 'quantidade' ? nome : 'Itens'
+  const serie = meses.map((m) => ({ mes: rotuloMes(m.mes), valor: m[medida], quantidade: m.quantidade, itens: m.itens }))
 
   return (
     <CartaoPainel
@@ -250,7 +396,7 @@ function EvolucaoMensal({ dados }: { dados: DadosPainel }) {
             value={medida}
             onChange={(v) => setMedida(v as typeof medida)}
             data={[
-              { value: 'transferencias', label: 'Transferências' },
+              { value: 'quantidade', label: nome },
               { value: 'itens', label: 'Itens' },
             ]}
           />
@@ -271,7 +417,7 @@ function EvolucaoMensal({ dados }: { dados: DadosPainel }) {
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Mês</Table.Th>
-                <Table.Th ta="right">Transferências</Table.Th>
+                <Table.Th ta="right">{nome}</Table.Th>
                 <Table.Th ta="right">Itens</Table.Th>
               </Table.Tr>
             </Table.Thead>
@@ -279,7 +425,7 @@ function EvolucaoMensal({ dados }: { dados: DadosPainel }) {
               {serie.map((m) => (
                 <Table.Tr key={m.mes}>
                   <Table.Td>{m.mes}</Table.Td>
-                  <Table.Td ta="right">{formatarNumero(m.transferencias)}</Table.Td>
+                  <Table.Td ta="right">{formatarNumero(m.quantidade)}</Table.Td>
                   <Table.Td ta="right">{formatarNumero(m.itens)}</Table.Td>
                 </Table.Tr>
               ))}

@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Controle de Saída de Materiais da Unidade (formulário FM-072-UOP-04).
+  Reproduz o formulário em papel: papel Carta paisagem, DejaVu Sans Condensed 10 pt no texto e DejaVu Sans Bold nos
+  títulos, e as mesmas posições, medidas em pontos sobre o PDF original. Corrige só os desalinhamentos do original:
+  rótulos e caixas dos tipos em colunas, "Responsável da UOP" sob as linhas "Ciente" e a data do "Recebi" na mesma
+  linha.
+  - Cabeçalho (título e dados da saída) e a linha FM-072-UOP-04 se repetem em cada página.
+  - A tabela de itens tem no mínimo 4 linhas, como no papel; o cabeçalho da tabela se repete nas páginas seguintes.
+  - As assinaturas vêm logo após a tabela, como no papel, sem se dividir entre páginas.
+  Template Thymeleaf em modo XML: use &#160; em vez de &nbsp;.
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <title th:text="${saida.titulo}">Saída</title>
+    <style>
+        @page {
+            size: letter landscape;
+            margin: 234pt 68.9pt 50pt 63.5pt;
+            @top-center { content: element(cabecalho); vertical-align: top; padding-top: 57pt; }
+            @bottom-center { content: element(rodape); vertical-align: top; padding-top: 3pt; }
+        }
+        body { font-family: DejaVu, sans-serif; font-size: 10pt; line-height: 11.65pt; color: #000; margin: 0; }
+        #cabecalho { position: running(cabecalho); width: 659.6pt; }
+        #rodape { position: running(rodape); width: 659.6pt; }
+        table { border-collapse: collapse; table-layout: fixed; }
+        td, th { padding: 0; }
+
+        /* Logo | título */
+        .titulo { width: 659.6pt; }
+        .titulo td { border: 0.72pt solid #000; height: 63.3pt; }
+        .titulo .logo { width: 213pt; text-align: center; vertical-align: middle; }
+        .titulo .logo img { max-width: 185pt; max-height: 46pt; }
+        .titulo .logo span { font-size: 16pt; font-weight: bold; }
+        .titulo .texto { text-align: center; vertical-align: top; padding-top: 9pt; font-size: 12pt; font-weight: bold; }
+
+        /* Dados (esquerda) e tipo de saída (direita), posições do original */
+        .dados { width: 659.6pt; margin-top: 7pt; }
+        .dados td.bloco { vertical-align: top; }
+        .campos { margin-left: 7.4pt; margin-top: 2.7pt; width: 190pt; }
+        .campos td { height: 11.65pt; line-height: 11pt; vertical-align: bottom; }
+        .campos .rotulo { width: 32pt; }
+        .campos .valor { border-bottom: 0.6pt solid #000; padding-left: 2pt; word-wrap: break-word; }
+        .tipos { width: 410.4pt; }
+        /* Texto na altura do original (PERMANENTE, TEMPORÁRIO, OUTRO); caixas centradas no texto */
+        .tipos td { vertical-align: top; padding-top: 2.7pt; }
+        .tipos td.caixa { padding-top: 1pt; }
+        .tipos tr.primeira td { height: 35.3pt; }
+        .tipos tr.segunda td { height: 24.5pt; }
+        .caixa div { width: 13.7pt; height: 13.7pt; border: 0.6pt solid #000; font-weight: bold;
+                     line-height: 13.7pt; text-align: center; }
+        .tipos .direita { padding-left: 11.4pt; }
+        .tipos .outro td { padding-top: 0; }
+        .tipos .outro table td { height: 13pt; vertical-align: bottom; }
+        .tipos .qual { border-bottom: 0.6pt solid #000; padding-left: 2pt; }
+
+        /* Itens: colunas do original (38,7 | 149,1 | 177,2 | 177,2 | 113,4 pt) */
+        .itens { width: 655.5pt; margin-left: 3.9pt; -fs-table-paginate: paginate; }
+        .itens th { border: 0.48pt solid #000; font-weight: bold; text-align: center; vertical-align: middle;
+                    padding: 1pt 2pt; }
+        .itens td { border: 0.48pt solid #000; height: 16.5pt; padding: 1.5pt 3pt; vertical-align: middle;
+                    white-space: pre-line; word-wrap: break-word; }
+        .itens tr { page-break-inside: avoid; }
+        .itens .centro { text-align: center; }
+        .itens .data { white-space: nowrap; }
+
+        /* Assinaturas, logo após a tabela */
+        .assinaturas { page-break-inside: avoid; }
+        .portador { margin-top: 20pt; text-align: center; }
+        .portador .nome { height: 11.65pt; }
+        .portador .linha { width: 150pt; margin: 0 auto; border-top: 0.6pt solid #000; padding-top: 1pt; }
+        .liberacao { width: 659.6pt; margin-top: 47pt; }
+        .liberacao td { vertical-align: top; }
+        .ciente { margin-top: 46pt; width: 186pt; }
+        .ciente td { vertical-align: bottom; }
+        .ciente .linha { border-bottom: 0.6pt solid #000; }
+        .ciente .legenda td { text-align: center; vertical-align: top; padding-top: 1pt; }
+        .rodape td { font-size: 10pt; }
+        .rodape .pagina { text-align: right; font-size: 7pt; }
+        .rodape .pagina span::after { content: "Saída nº " attr(data-numero) " · página " counter(page) " de " counter(pages); }
+    </style>
+</head>
+<body>
+
+<div id="cabecalho">
+    <table class="titulo">
+        <tr>
+            <td class="logo">
+                <img th:if="${saida.logo != null}" th:src="${saida.logo}" th:alt="${saida.instituicao}" alt=""/>
+                <span th:if="${saida.logo == null}" th:text="${saida.instituicao}">SENAI</span>
+            </td>
+            <td class="texto">CONTROLE DE SAÍDA DE MATERIAIS DA UNIDADE</td>
+        </tr>
+    </table>
+
+    <table class="dados">
+        <colgroup><col style="width: 249.2pt;"/><col style="width: 410.4pt;"/></colgroup>
+        <tr>
+            <td class="bloco">
+                <table class="campos">
+                    <colgroup><col style="width: 32pt;"/><col style="width: 158pt;"/></colgroup>
+                    <tr><td class="rotulo">DATA</td><td class="valor" th:text="${saida.data}">07/10/2026</td></tr>
+                    <tr><td class="rotulo">DE:</td><td class="valor" th:text="${saida.origem}">SEDE</td></tr>
+                    <tr><td class="rotulo">PARA:</td><td class="valor" th:text="${saida.destino}">CETAF-AJU</td></tr>
+                </table>
+            </td>
+            <td class="bloco">
+                <table class="tipos">
+                    <colgroup>
+                        <col style="width: 77.9pt;"/><col style="width: 14.4pt;"/><col style="width: 75.5pt;"/>
+                        <col style="width: 14.4pt;"/><col style="width: 228.2pt;"/>
+                    </colgroup>
+                    <tr class="primeira">
+                        <td>PERMANENTE</td>
+                        <td class="caixa"><div th:text="${saida.marca('PERMANENTE')}"></div></td>
+                        <td></td>
+                        <td class="caixa"><div th:text="${saida.marca('MANUTENCAO')}"></div></td>
+                        <td class="direita">MANUTENÇÃO</td>
+                    </tr>
+                    <tr class="segunda">
+                        <td>TEMPORÁRIO</td>
+                        <td class="caixa"><div th:text="${saida.marca('TEMPORARIO')}"></div></td>
+                        <td></td>
+                        <td class="caixa"><div th:text="${saida.marca('EVENTO')}"></div></td>
+                        <td class="direita">EVENTO</td>
+                    </tr>
+                    <tr class="outro">
+                        <td colspan="5">
+                            <table style="width: 302pt;">
+                                <colgroup><col style="width: 80pt;"/><col style="width: 222pt;"/></colgroup>
+                                <tr>
+                                    <td>OUTRO,&#160;&#160;QUAL:</td>
+                                    <td class="qual" th:text="${saida.tipoOutro}"></td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div id="rodape">
+    <table class="rodape" style="width: 659.6pt;">
+        <colgroup><col style="width: 329.8pt;"/><col style="width: 329.8pt;"/></colgroup>
+        <tr>
+            <td style="padding-left: 7.4pt;">FM-072-UOP-04</td>
+            <td class="pagina"><span th:attr="data-numero=${saida.numero}"></span></td>
+        </tr>
+    </table>
+</div>
+
+<table class="itens">
+    <colgroup>
+        <col style="width: 38.7pt;"/>
+        <col style="width: 149.1pt;"/>
+        <col style="width: 177.2pt;"/>
+        <col style="width: 177.2pt;"/>
+        <col style="width: 113.3pt;"/>
+    </colgroup>
+    <thead>
+        <tr>
+            <th>ITEM</th>
+            <th>DESCRIÇÃO DO MATERIAL</th>
+            <th>ÁREA DE SAÍDA<br/>( SETOR/OFICINA/<br/>LABORATÓRIO)</th>
+            <th>ÁREA DE ENTRADA<br/>( SETOR/OFICINA/<br/>LABORATÓRIO)</th>
+            <th style="padding: 1pt 4pt;">OBSERVAÇÃO (Caso seja temporário, colocar data prevista de retorno)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="item : ${saida.itens}">
+            <td class="centro" th:text="${item.ordem}">1</td>
+            <td th:text="${item.descricao}">Notebook</td>
+            <td th:text="${item.areaSaida}"></td>
+            <td th:text="${item.areaEntrada}"></td>
+            <td><span th:each="trecho : ${item.observacaoEmTrechos}" th:text="${trecho.texto}"
+                      th:class="${trecho.data} ? 'data'"></span></td>
+        </tr>
+        <tr th:each="linha : ${saida.linhasEmBranco}">
+            <td>&#160;</td><td></td><td></td><td></td><td></td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="assinaturas">
+    <div class="portador">
+        <div class="nome" th:text="${saida.portador}"></div>
+        <div class="linha"></div>
+        <div>Assinatura do Portador do Equipamento</div>
+    </div>
+
+    <table class="liberacao">
+        <colgroup><col style="width: 7.4pt;"/><col style="width: 384.6pt;"/><col style="width: 267.6pt;"/></colgroup>
+        <tr>
+            <td></td>
+            <td>
+                Liberei o material acima discriminado, em _____/____/____
+                <table class="ciente">
+                    <colgroup><col style="width: 38pt;"/><col style="width: 148pt;"/></colgroup>
+                    <tr><td>Ciente:</td><td class="linha">&#160;</td></tr>
+                    <tr class="legenda"><td></td><td>Responsável da UOP</td></tr>
+                </table>
+            </td>
+            <td>
+                Recebi o material acima discriminado, em _____/____/____
+                <table class="ciente">
+                    <colgroup><col style="width: 38pt;"/><col style="width: 148pt;"/></colgroup>
+                    <tr><td>Ciente:</td><td class="linha">&#160;</td></tr>
+                    <tr class="legenda"><td></td><td>Responsável da UOP</td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>
+
+</body>
+</html>

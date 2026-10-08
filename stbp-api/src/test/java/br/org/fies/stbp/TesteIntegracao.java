@@ -48,7 +48,7 @@ public abstract class TesteIntegracao {
 
     @BeforeEach
     void limparBanco() {
-        jdbc.execute("TRUNCATE item, transferencia, usuario, unidade_instituicao, unidade, instituicao "
+        jdbc.execute("TRUNCATE saida_material_item, saida_material, item, transferencia, usuario, unidade_instituicao, unidade, instituicao "
                 + "RESTART IDENTITY CASCADE");
         jdbc.execute("INSERT INTO instituicao (id, nome) VALUES (1, 'SESI'), (2, 'SENAI')");
         jdbc.execute("INSERT INTO unidade (id, nome) VALUES (1, 'SEDE'), (2, 'CETAF-AJU'), (3, 'CEFEM'), (4, 'CETAF-EST')");

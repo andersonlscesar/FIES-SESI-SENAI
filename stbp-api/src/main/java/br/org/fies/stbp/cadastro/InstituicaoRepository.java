@@ -10,9 +10,6 @@ public interface InstituicaoRepository extends JpaRepository<Instituicao, Long> 
 
     Optional<Instituicao> findByNomeIgnoreCase(String nome);
 
-    @Query("select count(t) > 0 from Transferencia t where t.instituicao.id = :id")
-    boolean usadaEmTransferencias(Long id);
-
     @Modifying
     @Query(value = "delete from unidade_instituicao where instituicao_id = :id", nativeQuery = true)
     void desvincularUnidades(Long id);

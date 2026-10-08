@@ -7,8 +7,13 @@ import type {
   MotivoInfo,
   Pagina,
   Painel,
+  PainelSaidas,
   Perfil,
   Referencia,
+  FiltroSaida,
+  SaidaDetalhe,
+  SaidaPedido,
+  SaidaResumo,
   TransferenciaDetalhe,
   TransferenciaPedido,
   TransferenciaResumo,
@@ -36,6 +41,19 @@ export const transferenciasApi = {
   excluirDefinitivamente: (id: number) => api.delete(`/api/transferencias/${id}/definitivo`),
   termo: (id: number, formato: 'RETRATO' | 'PAISAGEM') =>
     api.blob(`/api/transferencias/${id}/termo${query({ formato })}`),
+}
+
+export const saidasApi = {
+  listar: (filtro: FiltroSaida) => api.get<Pagina<SaidaResumo>>(`/api/saidas${query(filtro)}`),
+  lixeira: (page: number) => api.get<Pagina<SaidaResumo>>(`/api/saidas/lixeira${query({ page })}`),
+  autores: () => api.get<Referencia[]>('/api/saidas/autores'),
+  detalhar: (id: number) => api.get<SaidaDetalhe>(`/api/saidas/${id}`),
+  criar: (pedido: SaidaPedido) => api.post<SaidaDetalhe>('/api/saidas', pedido),
+  atualizar: (id: number, pedido: SaidaPedido) => api.put<SaidaDetalhe>(`/api/saidas/${id}`, pedido),
+  moverParaLixeira: (id: number) => api.delete(`/api/saidas/${id}`),
+  restaurar: (id: number) => api.post<void>(`/api/saidas/${id}/restaurar`),
+  excluirDefinitivamente: (id: number) => api.delete(`/api/saidas/${id}/definitivo`),
+  formulario: (id: number) => api.blob(`/api/saidas/${id}/formulario`),
 }
 
 export const cadastrosApi = {
@@ -92,4 +110,6 @@ export const usuariosApi = {
 export const painelApi = {
   gerar: (filtro: { dataInicial?: string; dataFinal?: string; instituicaoId?: string }) =>
     api.get<Painel>(`/api/painel${query(filtro)}`),
+  saidas: (filtro: { dataInicial?: string; dataFinal?: string; instituicaoId?: string }) =>
+    api.get<PainelSaidas>(`/api/painel/saidas${query(filtro)}`),
 }

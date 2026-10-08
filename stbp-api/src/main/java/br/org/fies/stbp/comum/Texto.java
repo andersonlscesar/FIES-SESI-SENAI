@@ -13,6 +13,9 @@ public final class Texto {
 
     /** Remove espaços extras e põe maiúscula na primeira letra de cada palavra, sem alterar as demais (ucwords). */
     public static String capitalizarPalavras(String texto) {
+        if (texto == null) {
+            return null;
+        }
         String limpo = ESPACOS.matcher(texto.trim()).replaceAll(" ");
         var sb = new StringBuilder(limpo.length());
         boolean inicioPalavra = true;
@@ -25,6 +28,9 @@ public final class Texto {
 
     /** Remove espaços nas pontas e põe maiúscula na primeira letra (ucfirst). */
     public static String primeiraMaiuscula(String texto) {
+        if (texto == null) {
+            return null;
+        }
         String limpo = texto.trim();
         return limpo.isEmpty() ? limpo : Character.toUpperCase(limpo.charAt(0)) + limpo.substring(1);
     }

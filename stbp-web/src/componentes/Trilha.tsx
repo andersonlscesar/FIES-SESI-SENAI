@@ -19,6 +19,14 @@ function passos(caminho: string): Passo[] {
       if (partes[2] === 'editar') return [{ rotulo: 'Patrimônio' }, transferencias, numero, { rotulo: 'Editar' }]
       return [{ rotulo: 'Patrimônio' }, transferencias, { rotulo: numero.rotulo }]
     }
+    case 'saidas': {
+      const saidas = { rotulo: 'Saídas de materiais', para: '/saidas' }
+      if (partes.length === 1) return [{ rotulo: 'Patrimônio' }, { rotulo: 'Saídas de materiais' }]
+      if (partes[1] === 'nova') return [{ rotulo: 'Patrimônio' }, saidas, { rotulo: 'Nova saída' }]
+      const numero = { rotulo: `Nº ${partes[1]}`, para: `/saidas/${partes[1]}` }
+      if (partes[2] === 'editar') return [{ rotulo: 'Patrimônio' }, saidas, numero, { rotulo: 'Editar' }]
+      return [{ rotulo: 'Patrimônio' }, saidas, { rotulo: numero.rotulo }]
+    }
     case 'painel':
       return [{ rotulo: 'Patrimônio' }, { rotulo: 'Painel' }]
     case 'instituicoes':

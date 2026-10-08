@@ -2,7 +2,7 @@
 
 API do **Sistema de Transferência de Bens Patrimoniais** (FIES / SESI / SENAI).
 
-Os técnicos de TI registram transferências de bens entre unidades: uma transferência (saída) tem vários itens e gera o *Termo de Transferência de Bens Patrimoniais* em PDF.
+Os técnicos de TI registram transferências de bens entre unidades: uma transferência tem vários itens e gera o *Termo de Transferência de Bens Patrimoniais* em PDF. Saídas mais simples de materiais (sem patrimônio, inclusive para destinos externos) usam o *Controle de Saída de Materiais da Unidade* (formulário FM-072-UOP-04), também em PDF. Um painel de análise consolida as duas modalidades.
 
 Esta API substitui o sistema anterior em Laravel + MySQL (`../fies-main`) e preserva todos os dados históricos.
 
@@ -30,6 +30,8 @@ As telas ficam em [`../stbp-web`](../stbp-web), e a implantação em produção 
 | 4. Termo em PDF (retrato e paisagem) | ✅ concluída |
 | 5. Frontend React ([stbp-web](../stbp-web)) | ✅ concluída |
 | 6. Implantação em Docker ([implantacao](../implantacao/README.md)) | ✅ concluída e validada em homologação |
+| 7. Painel de análise | ✅ concluída |
+| 8. Controle de Saída de Materiais (FM-072-UOP-04) e painel de saídas | ✅ concluída |
 
 Todas as funcionalidades do sistema antigo estão cobertas. O login é local (D-003), e os usuários entram com a mesma senha de antes.
 
@@ -112,7 +114,9 @@ stbp-api/
     ├── java/br/org/fies/stbp/
     │   ├── auth/          # login, perfil do usuário logado, troca da própria senha
     │   ├── cadastro/      # instituições (logo), unidades (foto) e motivos; imagens no banco
-    │   ├── comum/         # exceções, tratamento de erros (Problem Details), paginação, normalização de texto
+    │   ├── comum/         # exceções, tratamento de erros (Problem Details), paginação, normalização de texto, gerador de PDF
+    │   ├── painel/        # painel de análise: agregados SQL de transferências e de saídas
+    │   ├── saida/         # controle de saída de materiais (FM-072-UOP-04): saídas, itens, filtros, lixeira e PDF
     │   ├── seguranca/     # JWT, Spring Security, hierarquia de perfis, limite de tentativas
     │   ├── transferencia/ # transferências, itens, filtros e lixeira
     │   └── usuario/       # entidade Usuario e gestão de usuários (ADMIN)
@@ -121,8 +125,9 @@ stbp-api/
         ├── application-dev.properties
         ├── db/migration/  # migrações Flyway (schema oficial)
         └── pdf/
-            ├── termo.xhtml   # template do Termo de Transferência (Thymeleaf, modo XML)
-            └── fontes/       # Carlito (equivalente livre da Calibri) + licença OFL
+            ├── termo.xhtml            # template do Termo de Transferência (Thymeleaf, modo XML)
+            ├── controle-saida.xhtml   # template do FM-072-UOP-04 (reproduz o formulário em papel, D-046)
+            └── fontes/                # Carlito (termo) e DejaVu (FM-072), com as licenças OFL e DejaVu
 ```
 
 Para alterar o layout do termo, edite `pdf/termo.xhtml`. O CSS segue o padrão de mídia paginada (`@page`, `running()`) suportado pelo OpenHTMLtoPDF. Os testes em `TermoIntegracaoTest` conferem o conteúdo do PDF gerado.

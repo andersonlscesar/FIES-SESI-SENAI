@@ -34,8 +34,28 @@ function Destaque({ texto, termos }: { texto: string; termos: string[] }) {
   return <>{partes}</>
 }
 
-/** Tabela de itens do detalhe da transferência, com busca rápida quando a lista é longa. */
-export function ItensTransferidos({ itens }: { itens: Item[] }) {
+type ItemDetalhe = Omit<Item, 'patrimonio'> & {
+  patrimonio?: string | null
+  areaSaida?: string | null
+  areaEntrada?: string | null
+}
+
+/**
+ * Tabela de itens do detalhe (transferência ou saída de materiais), com busca rápida quando a lista é longa.
+ * {@code comAreas} mostra as colunas de área de saída e de entrada do controle de saída.
+ */
+export function ItensTransferidos({
+  itens,
+  titulo = 'Itens transferidos',
+  comAreas = false,
+  comPatrimonio = true,
+}: {
+  itens: ItemDetalhe[]
+  titulo?: string
+  comAreas?: boolean
+  /** false = itens sem patrimônio (controle de saída). */
+  comPatrimonio?: boolean
+}) {
   const [busca, setBusca] = useState('')
   const [buscaAplicada] = useDebouncedValue(busca, 120)
   const filtrados = useMemo(() => filtrarItens(itens, buscaAplicada), [itens, buscaAplicada])
@@ -46,12 +66,12 @@ export function ItensTransferidos({ itens }: { itens: Item[] }) {
   return (
     <Paper withBorder>
       <Group justify="space-between" px="md" py="sm" gap="sm" style={{ borderBottom: '1px solid var(--stbp-borda)' }}>
-        <Text fw={600}>Itens transferidos</Text>
+        <Text fw={600}>{titulo}</Text>
         <Group gap="md" wrap="nowrap">
           {comFiltro && (
             <TextInput
               aria-label="Filtrar itens"
-              placeholder="Filtrar por descrição, patrimônio ou nº"
+              placeholder={comPatrimonio ? 'Filtrar por descrição, patrimônio ou nº' : 'Filtrar por descrição, área ou nº'}
               size="xs"
               w={300}
               leftSection={<IconSearch size={14} />}
@@ -66,13 +86,15 @@ export function ItensTransferidos({ itens }: { itens: Item[] }) {
           </Text>
         </Group>
       </Group>
-      <Table.ScrollContainer minWidth={600}>
+      <Table.ScrollContainer minWidth={comAreas ? 900 : 600}>
         <Table striped>
           <Table.Thead>
             <Table.Tr>
               <Table.Th w={64}>Item</Table.Th>
-              <Table.Th>Descrição do bem</Table.Th>
-              <Table.Th w={170}>Patrimônio</Table.Th>
+              <Table.Th>{comAreas ? 'Descrição do material' : 'Descrição do bem'}</Table.Th>
+              {comPatrimonio && <Table.Th w={170}>Patrimônio</Table.Th>}
+              {comAreas && <Table.Th>Área de saída</Table.Th>}
+              {comAreas && <Table.Th>Área de entrada</Table.Th>}
               <Table.Th>Observação</Table.Th>
             </Table.Tr>
           </Table.Thead>
@@ -85,9 +107,13 @@ export function ItensTransferidos({ itens }: { itens: Item[] }) {
                 <Table.Td>
                   <Destaque texto={item.descricao} termos={termos} />
                 </Table.Td>
-                <Table.Td className="stbp-numero">
-                  {item.patrimonio ? <Destaque texto={item.patrimonio} termos={termos} /> : <Text c="dimmed" span>S/P</Text>}
-                </Table.Td>
+                {comPatrimonio && (
+                  <Table.Td className="stbp-numero">
+                    {item.patrimonio ? <Destaque texto={item.patrimonio} termos={termos} /> : <Text c="dimmed" span>S/P</Text>}
+                  </Table.Td>
+                )}
+                {comAreas && <Table.Td>{item.areaSaida && <Destaque texto={item.areaSaida} termos={termos} />}</Table.Td>}
+                {comAreas && <Table.Td>{item.areaEntrada && <Destaque texto={item.areaEntrada} termos={termos} />}</Table.Td>}
                 <Table.Td style={{ whiteSpace: 'pre-line' }}>
                   {item.observacao && <Destaque texto={item.observacao} termos={termos} />}
                 </Table.Td>
@@ -95,7 +121,7 @@ export function ItensTransferidos({ itens }: { itens: Item[] }) {
             ))}
             {filtrados.length === 0 && (
               <Table.Tr>
-                <Table.Td colSpan={4}>
+                <Table.Td colSpan={3 + (comPatrimonio ? 1 : 0) + (comAreas ? 2 : 0)}>
                   <Text size="sm" c="dimmed" ta="center" py="md">
                     Nenhum item corresponde a “{buscaAplicada.trim()}”.
                   </Text>

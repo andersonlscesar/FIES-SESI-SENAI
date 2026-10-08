@@ -1,11 +1,7 @@
 package br.org.fies.stbp.painel;
 
-import java.sql.Date;
 import java.time.Clock;
 import java.time.LocalDate;
-import java.time.YearMonth;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -16,7 +12,6 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.org.fies.stbp.comum.RegraNegocioException;
 import br.org.fies.stbp.painel.PainelDtos.Bem;
 import br.org.fies.stbp.painel.PainelDtos.Contagem;
 import br.org.fies.stbp.painel.PainelDtos.Mes;
@@ -52,22 +47,16 @@ public class PainelService {
         this.relogio = relogio;
     }
 
-    /** Sem datas: os últimos 12 meses completos até hoje (do 1º dia de 11 meses atrás até hoje). */
+    /** Sem datas: os últimos 12 meses (do 1º dia de 11 meses atrás até hoje). Ver {@link Periodos}. */
     @Transactional(readOnly = true)
     public Painel gerar(LocalDate dataInicial, LocalDate dataFinal, Long instituicaoId) {
-        LocalDate hoje = LocalDate.now(relogio);
-        LocalDate fim = dataFinal != null ? dataFinal : hoje;
-        LocalDate inicio = dataInicial != null ? dataInicial : fim.minusMonths(11).withDayOfMonth(1);
-        if (inicio.isAfter(fim)) {
-            throw new RegraNegocioException("A data inicial deve ser anterior à data final");
-        }
-        long dias = ChronoUnit.DAYS.between(inicio, fim) + 1;
-        var periodo = new Periodo(inicio, fim);
-        var anterior = new Periodo(inicio.minusDays(dias), inicio.minusDays(1));
+        Periodo[] periodos = Periodos.calcular(dataInicial, dataFinal, LocalDate.now(relogio));
+        var periodo = periodos[0];
+        var anterior = periodos[1];
 
-        var atual = parametros(periodo, instituicaoId);
+        var atual = Periodos.parametros(periodo, instituicaoId);
         return new Painel(periodo, anterior,
-                resumo(atual, parametros(anterior, instituicaoId)),
+                resumo(atual, Periodos.parametros(anterior, instituicaoId)),
                 porMes(atual, periodo),
                 porMotivo(atual),
                 contagem(atual, "t.instituicao_id", "instituicao", Integer.MAX_VALUE),
@@ -76,13 +65,6 @@ public class PainelService {
                 rotas(atual),
                 emissores(atual),
                 bens(atual));
-    }
-
-    private static MapSqlParameterSource parametros(Periodo p, Long instituicaoId) {
-        return new MapSqlParameterSource()
-                .addValue("inicio", Date.valueOf(p.inicio()))
-                .addValue("fim", Date.valueOf(p.fim()))
-                .addValue("instituicaoId", instituicaoId);
     }
 
     private Resumo resumo(MapSqlParameterSource atual, MapSqlParameterSource anterior) {
@@ -119,19 +101,10 @@ public class PainelService {
             valores.put(rs.getString("mes"), new long[] {rs.getLong("transferencias"), rs.getLong("itens")});
         });
 
-        // Para "todo o histórico", começa no primeiro mês com dados, e não na data inicial (ex.: 2000-01)
-        YearMonth primeiro = valores.keySet().stream().map(YearMonth::parse).min(YearMonth::compareTo)
-                .orElse(YearMonth.from(periodo.inicio()));
-        YearMonth mes = YearMonth.from(periodo.inicio());
-        if (primeiro.isAfter(mes) && ChronoUnit.MONTHS.between(mes, YearMonth.from(periodo.fim())) > 24) {
-            mes = primeiro;
-        }
-        var lista = new ArrayList<Mes>();
-        for (; !mes.isAfter(YearMonth.from(periodo.fim())); mes = mes.plusMonths(1)) {
+        return Periodos.meses(periodo, valores.keySet()).stream().map(mes -> {
             long[] v = valores.getOrDefault(mes.toString(), new long[] {0, 0});
-            lista.add(new Mes(mes.toString(), v[0], v[1]));
-        }
-        return lista;
+            return new Mes(mes.toString(), v[0], v[1]);
+        }).toList();
     }
 
     /** Os quatro motivos sempre aparecem (com zero), na ordem do enum. */

@@ -2,8 +2,8 @@ package br.org.fies.stbp.transferencia;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.Map;
 
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.multipdf.LayerUtility;
@@ -13,13 +13,8 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.util.Matrix;
 import org.springframework.stereotype.Component;
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.Context;
-import org.thymeleaf.templatemode.TemplateMode;
-import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
-import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder.FontStyle;
-import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import br.org.fies.stbp.comum.GeradorPdf;
 
 /**
  * Gera o Termo de Transferência em PDF. O retrato é renderizado a partir de resources/pdf/termo.xhtml; a paisagem
@@ -33,42 +28,15 @@ public class TermoPdf {
         PAISAGEM
     }
 
-    private static final String FONTE = "Carlito";
+    private final GeradorPdf gerador;
 
-    private final TemplateEngine templates;
-
-    TermoPdf() {
-        var resolver = new ClassLoaderTemplateResolver();
-        resolver.setPrefix("pdf/");
-        resolver.setSuffix(".xhtml");
-        resolver.setTemplateMode(TemplateMode.XML);
-        resolver.setCharacterEncoding("UTF-8");
-        this.templates = new TemplateEngine();
-        this.templates.setTemplateResolver(resolver);
+    TermoPdf(GeradorPdf gerador) {
+        this.gerador = gerador;
     }
 
     public byte[] gerar(TermoDados termo, Formato formato) {
-        byte[] retrato = renderizarRetrato(termo);
+        byte[] retrato = gerador.renderizar("termo", Map.of("termo", termo));
         return formato == Formato.RETRATO ? retrato : duasViasEmPaisagem(retrato);
-    }
-
-    private byte[] renderizarRetrato(TermoDados termo) {
-        var contexto = new Context();
-        contexto.setVariable("termo", termo);
-        String html = templates.process("termo", contexto);
-
-        var saida = new ByteArrayOutputStream();
-        var builder = new PdfRendererBuilder();
-        builder.useFont(() -> fonte("Carlito-Regular.ttf"), FONTE, 400, FontStyle.NORMAL, true);
-        builder.useFont(() -> fonte("Carlito-Bold.ttf"), FONTE, 700, FontStyle.NORMAL, true);
-        builder.withHtmlContent(html, null);
-        builder.toStream(saida);
-        try {
-            builder.run();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Falha ao gerar o termo em PDF", e);
-        }
-        return saida.toByteArray();
     }
 
     /** Cada página A4 retrato vira uma A4 paisagem com duas cópias reduzidas (escala A4 → A5) lado a lado. */
@@ -101,9 +69,5 @@ public class TermoPdf {
         } catch (IOException e) {
             throw new UncheckedIOException("Falha ao montar o termo em paisagem", e);
         }
-    }
-
-    private static InputStream fonte(String arquivo) {
-        return TermoPdf.class.getResourceAsStream("/pdf/fontes/" + arquivo);
     }
 }

@@ -25,8 +25,9 @@ public class Instituicao {
     @Formula("(logo is not null)")
     private boolean temLogo;
 
-    /** Usada em alguma transferência: nesse caso não pode ser excluída, só bloqueada. */
-    @Formula("(exists (select 1 from transferencia t where t.instituicao_id = id))")
+    /** Usada em alguma transferência ou saída de materiais: nesse caso não pode ser excluída, só bloqueada. */
+    @Formula("(exists (select 1 from transferencia t where t.instituicao_id = id)"
+            + " or exists (select 1 from saida_material s where s.instituicao_id = id))")
     private boolean emUso;
 
     protected Instituicao() {

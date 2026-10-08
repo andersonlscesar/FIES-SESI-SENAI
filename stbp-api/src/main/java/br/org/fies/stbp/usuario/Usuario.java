@@ -36,8 +36,9 @@ public class Usuario {
 
     private boolean trocarSenha = true;
 
-    /** Criou alguma transferência: não pode ser excluído, só bloqueado (D-035). */
-    @Formula("(exists (select 1 from transferencia t where t.criado_por_id = id))")
+    /** Criou alguma transferência ou saída de materiais: não pode ser excluído, só bloqueado (D-035). */
+    @Formula("(exists (select 1 from transferencia t where t.criado_por_id = id)"
+            + " or exists (select 1 from saida_material s where s.criado_por_id = id))")
     private boolean emUso;
 
     @CreationTimestamp

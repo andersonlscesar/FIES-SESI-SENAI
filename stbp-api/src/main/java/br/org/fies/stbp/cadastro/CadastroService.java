@@ -67,15 +67,15 @@ public class CadastroService {
     }
 
     /**
-     * Remove também os vínculos com unidades. Instituição já usada em transferências não pode ser excluída
+     * Remove também os vínculos com unidades. Instituição já usada em transferências ou saídas de materiais não pode ser excluída
      * (o histórico depende dela): deve ser bloqueada (D-033).
      */
     @Transactional
     public void excluirInstituicao(Long id) {
         var instituicao = carregarInstituicao(id);
-        if (instituicoes.usadaEmTransferencias(id)) {
+        if (instituicao.isEmUso()) {
             throw new ConflitoException(
-                    "A instituição possui transferências e não pode ser excluída. Bloqueie-a para impedir novos usos");
+                    "A instituição possui transferências ou saídas de materiais e não pode ser excluída. Bloqueie-a para impedir novos usos");
         }
         instituicoes.desvincularUnidades(id);
         instituicoes.delete(instituicao);
@@ -154,9 +154,9 @@ public class CadastroService {
     @Transactional
     public void excluirUnidade(Long id) {
         var unidade = carregarUnidade(id);
-        if (unidades.usadaEmTransferencias(id)) {
+        if (unidade.isEmUso()) {
             throw new ConflitoException(
-                    "A unidade possui transferências e não pode ser excluída. Bloqueie-a para impedir novos usos");
+                    "A unidade possui transferências ou saídas de materiais e não pode ser excluída. Bloqueie-a para impedir novos usos");
         }
         unidades.delete(unidade);
     }

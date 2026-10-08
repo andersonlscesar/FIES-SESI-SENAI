@@ -27,8 +27,9 @@ public class Unidade {
     /** Bloqueada ({@code false}): não pode ser origem nem destino de novas transferências; o histórico continua. */
     private boolean ativa = true;
 
-    /** Usada como origem ou destino de alguma transferência: não pode ser excluída, só bloqueada. */
-    @Formula("(exists (select 1 from transferencia t where t.origem_id = id or t.destino_id = id))")
+    /** Usada como origem ou destino de alguma transferência ou saída de materiais: não pode ser excluída, só bloqueada. */
+    @Formula("(exists (select 1 from transferencia t where t.origem_id = id or t.destino_id = id)"
+            + " or exists (select 1 from saida_material s where s.origem_id = id or s.destino_id = id))")
     private boolean emUso;
 
     /** A foto (bytes) não é mapeada aqui; ver {@link ImagemRepository}. */

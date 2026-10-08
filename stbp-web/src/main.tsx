@@ -25,6 +25,9 @@ import { Instituicoes } from './paginas/cadastros/Instituicoes'
 import { Unidades } from './paginas/cadastros/Unidades'
 import { Login } from './paginas/Login'
 import { Painel } from './paginas/Painel'
+import { DetalheSaida } from './paginas/saidas/DetalheSaida'
+import { FormularioSaida } from './paginas/saidas/FormularioSaida'
+import { ListaSaidas } from './paginas/saidas/ListaSaidas'
 import { TrocarSenha } from './paginas/TrocarSenha'
 import { DetalheTransferencia } from './paginas/transferencias/DetalheTransferencia'
 import { FormularioTransferencia } from './paginas/transferencias/FormularioTransferencia'
@@ -68,10 +71,14 @@ createRoot(document.getElementById('root')!).render(
                       <Route path="/painel" element={<Painel />} />
                       <Route path="/transferencias" element={<ListaTransferencias />} />
                       <Route path="/transferencias/:id" element={<DetalheTransferencia />} />
+                      <Route path="/saidas" element={<ListaSaidas />} />
+                      <Route path="/saidas/:id" element={<DetalheSaida />} />
                       <Route element={<RotaProtegida perfil="TECNICO" />}>
                         <Route path="/transferencias/nova" element={<FormularioTransferencia />} />
                         <Route path="/transferencias/:id/editar" element={<FormularioTransferencia />} />
                         <Route path="/transferencias/lixeira" element={<Lixeira />} />
+                        <Route path="/saidas/nova" element={<FormularioSaida />} />
+                        <Route path="/saidas/:id/editar" element={<FormularioSaida />} />
                       </Route>
                       <Route element={<RotaProtegida perfil="ADMIN" />}>
                         <Route path="/instituicoes" element={<Instituicoes />} />

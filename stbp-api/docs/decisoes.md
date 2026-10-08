@@ -4,6 +4,73 @@ As decisões técnicas do projeto e o motivo de cada uma, da mais recente para a
 
 ---
 
+### D-047 · Documentação do projeto em PDF
+**2026-10-07 (pedido do usuário: "gere o pdf documentando todo o projeto e também seus endpoints").**
+- **Fonte única:** o PDF não é escrito à parte. Ele é gerado dos mesmos arquivos Markdown do repositório (`npm run docs:pdf` em `stbp-web`), então acompanha a documentação. O único texto novo é a visão geral, em `documentacao/visao-geral.md`.
+- **Endpoints conferidos:** a referência rápida é montada a partir do `api.md` e comparada com os `@GetMapping`, `@PostMapping` e demais anotações dos controllers. Uma divergência interrompe a geração. Na primeira geração, os 55 endpoints bateram.
+- **Correções encontradas no caminho:**
+  - Documentos que ainda falavam só em "transferências" nas regras de exclusão de instituições, unidades e usuários.
+  - A estrutura de pacotes do README da API, sem `saida/` e `painel/`.
+  - O diagrama do modelo de dados, sem as colunas das tabelas de saída.
+  - O título da D-045, que tinha se perdido.
+
+---
+
+### D-046 · Formulário de saída idêntico ao FM-072-UOP-04 em papel
+**2026-10-07 (pedido do usuário: "o relatório dessas saídas deve estar o mais idêntico possível com o que te enviei").**
+- **Revisão da D-044:** a primeira versão do PDF reorganizava o formulário em quadros com faixa cinza ("Dados da saída" e "Tipo de saída"). Agora ele segue o papel.
+- **Como foi medido:** as posições do texto, as linhas da tabela e as caixas foram extraídas do PDF original (`pdftotext -bbox` e os vetores da página) e reproduzidas em pontos. Uma comparação automática mostrou diferença de até 1 pt.
+- **O que ficou igual ao papel:**
+  - Papel Carta paisagem.
+  - Fontes DejaVu Sans Condensed 10 pt no texto e DejaVu Sans Bold nos títulos, embutidas no PDF (licença livre, em `resources/pdf/fontes/LICENSE-DejaVu.txt`).
+  - Caixa do logo e do título, e o título no alto da caixa.
+  - DATA, DE e PARA com linha de preenchimento.
+  - Tipos com as caixas soltas: PERMANENTE □ □ MANUTENÇÃO e TEMPORÁRIO □ □ EVENTO.
+  - "OUTRO, QUAL:" com linha.
+  - Tabela sem fundo cinza, com cabeçalho em negrito, os textos do original e as mesmas larguras de coluna.
+  - No mínimo 4 linhas de itens, completando com linhas em branco.
+  - Assinatura do portador e "Liberei…" / "Recebi…" com "Ciente".
+  - FM-072-UOP-04 no rodapé.
+- **O que foi corrigido do original:**
+  - **Alinhamento:** "TEMPORÁRIO", "EVENTO" e "OUTRO" estavam deslocados. Agora ficam em coluna com "PERMANENTE" e "MANUTENÇÃO", e as caixas centradas no texto.
+  - **Datas inteiras na linha:** a data do "Recebi…" fica na mesma linha, e as datas na observação não se partem ("15/10/2026" vai inteira para a linha seguinte).
+  - **"Responsável da UOP":** no original, a legenda caía na página 2. Agora fica sob as duas linhas "Ciente".
+  - **Grafia:** "ÍTEM" virou "ITEM", e "LABORATÓRIO" quebra depois da barra, não no meio da palavra.
+- **Acréscimos do sistema:**
+  - O nome do portador impresso sobre a linha de assinatura.
+  - "Saída nº X · página n de m", em letra pequena, à direita do código do formulário.
+- **Várias páginas:** o cabeçalho e o código se repetem em cada página. O cabeçalho da tabela se repete. As assinaturas vêm uma vez, logo após o último item, como no papel, sem se dividir entre páginas.
+
+### D-045 · Saídas de materiais no painel
+**2026-10-07 (pedido do usuário: "inclua também essas saídas de materiais no painel").**
+- **Uma visão por vez:** o painel ganhou o seletor "Movimentação" (Transferências | Saídas de materiais), que fica na URL (`?visao=saidas`) junto com o período e a instituição. As duas modalidades não são somadas: são documentos diferentes, com motivos/tipos diferentes, e um total misturado não responderia a nenhuma pergunta real.
+- **Endpoint próprio:** `GET /api/painel/saidas`, com os mesmos parâmetros e as mesmas regras do `GET /api/painel` (lixeira fora, período anterior de mesma duração, todos os perfis). As regras de período ficaram numa classe comum (`Periodos`).
+- **O que muda em relação às transferências:**
+  - O indicador "Itens sem patrimônio" deu lugar a **"Para destinos externos"**: a parte das saídas que vai para fora das unidades cadastradas.
+  - **Por tipo de saída** mostra os cinco quadros do formulário, sempre na mesma ordem.
+  - **Destinos mais frequentes** junta unidades e destinos externos no mesmo ranking. O destino externo aparece com o ícone de alfinete e é agrupado pelo texto, sem diferenciar maiúsculas e espaços ("Assistência Técnica XYZ" e "assistência técnica  xyz" contam juntos).
+  - **Materiais mais frequentes** no lugar de "Bens mais transferidos".
+
+ · Controle de Saída de Materiais (FM-072-UOP-04)
+**2026-10-07 (pedido do usuário: "a empresa utiliza esse tipo de formulário para registrar transferências mais simples. Implemente esta modalidade. O relatório em anexo está todo desalinhado").**
+
+Decisões do usuário:
+- **De e Para:** DE é uma unidade cadastrada. PARA é uma unidade cadastrada ou um destino externo digitado (assistência técnica, local de evento).
+- **Patrimônio:** não existe nesta modalidade, como no papel. A primeira versão tinha uma coluna opcional, que o usuário pediu para remover no mesmo dia: "nesse cenário não haverá patrimônios". A V6 foi ajustada antes de ser aplicada em qualquer banco. Na tela, a grade de itens sem coluna de patrimônio troca o gerador em sequência por "Adicionar vários iguais" e esconde as opções de patrimônio da seleção e da edição em lote.
+- **Retorno:** só registrado, como no papel (a data prevista vai na observação do item). O controle de devolução fica para uma etapa futura.
+- **Navegação:** menu próprio ("Saídas de materiais" e "Nova saída"), com a lixeira compartilhada em abas.
+
+Como foi feito:
+- **Modelo:** tabelas próprias (`saida_material`, `saida_material_item`, V6), em vez de um "tipo" dentro de `transferencia`. Os campos são diferentes: sem responsáveis, com tipo de saída, áreas por item, destino externo e portador. As restrições `CHECK` garantem destino único e "outro, qual" coerente com o tipo.
+- **Numeração:** própria ("Saída nº 1"), independente dos termos de transferência.
+- **Regras:** as mesmas da transferência (permissões, lixeira, bloqueios, sincronização dos itens).
+- **Cadastros em uso:** instituições, unidades e usuários usados **só** em saídas também não podem ser excluídos (D-035).
+  - **Correção no caminho:** a exclusão consultava repositórios que olhavam só as transferências, e excluir uma unidade usada apenas numa saída dava erro 500 de chave estrangeira. A regra passou a usar a fórmula `emUso` da entidade, que é única e cobre os dois casos.
+- **PDF:** refeito do zero em A4 paisagem, com todas as medidas em mm, colunas de largura fixa (`colgroup` e `table-layout: fixed`) e dois quadros simétricos de mesma altura ("Dados da saída" e "Tipo de saída"). *Substituído pela D-046: o PDF agora reproduz o formulário em papel.*
+  - **O que corrige do formulário original:** o rótulo "Responsável da UOP" deslocado para a página 2, as caixas de seleção desencontradas e as colunas de largura irregular.
+  - **Assinaturas e cabeçalho:** repetidos em cada página. A renderização foi extraída para `comum/GeradorPdf`, compartilhado com o termo de transferência.
+- **Tela:** a grade de itens do formulário de transferência (filtro, seleção, edição em lote, gerador em sequência) virou o componente `GradeItens`, com colunas configuráveis. Na saída, ele ganha as áreas de saída e entrada, também no gerador e na edição em lote.
+
 ### D-043 · Edição em lote dos itens no formulário
 **2026-10-07 (pedido do usuário: "esqueci de colocar a observação em vários itens, gostaria de em uma vez só aplicar a observação").**
 - **Seleção:** caixa por linha, "selecionar todos os visíveis" no cabeçalho, Shift+clique para intervalos e seleções rápidas (sem observação, sem patrimônio, sem descrição, inverter). A seleção é guardada pela chave do item, então sobrevive a reordenações.

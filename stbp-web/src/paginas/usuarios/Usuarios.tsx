@@ -204,7 +204,7 @@ export function Usuarios() {
                             <>
                               <Menu.Divider />
                               <Tooltip
-                                label="Possui transferências: bloqueie em vez de excluir"
+                                label="Possui transferências ou saídas de materiais: bloqueie em vez de excluir"
                                 disabled={!u.emUso}
                                 position="left"
                               >
@@ -216,7 +216,7 @@ export function Usuarios() {
                                     onClick={() =>
                                       confirmar(
                                         `Excluir ${u.nome}?`,
-                                        'O usuário nunca criou transferências. Ele vai para a lixeira e pode ser restaurado depois.',
+                                        'O usuário nunca criou transferências nem saídas de materiais. Ele vai para a lixeira e pode ser restaurado depois.',
                                         () => usuariosApi.excluir(u.id),
                                         'Usuário excluído.',
                                       )

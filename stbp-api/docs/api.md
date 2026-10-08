@@ -65,7 +65,7 @@ As listagens aceitam `page` (começa em 0), `size` e `sort` (ex.: `sort=nome,des
 
 ### `POST /api/auth/login` (público)
 
-O campo `usuario` aceita o **login ou o e-mail**, sem diferenciar maiúsculas e minúsculas.
+Autentica o usuário e devolve o token. O campo `usuario` aceita o **login ou o e-mail**, sem diferenciar maiúsculas e minúsculas.
 
 ```json
 { "usuario": "anderson.luiz", "senha": "..." }
@@ -91,7 +91,7 @@ Devolve o `Usuario` logado. Funciona mesmo com troca de senha pendente.
 
 ### `PUT /api/auth/senha`
 
-O usuário troca a própria senha. Funciona mesmo com troca de senha pendente. O token atual continua válido.
+Troca a própria senha. Funciona mesmo com troca de senha pendente. O token atual continua válido.
 
 ```json
 { "senhaAtual": "...", "novaSenha": "mínimo 8, máximo 72 caracteres" }
@@ -114,7 +114,7 @@ Regras de quem pode o quê: [perfis-e-permissoes.md](perfis-e-permissoes.md).
 | `PUT /api/usuarios/{id}/senha` | Redefine a senha `{ "novaSenha": "..." }`. O usuário precisará trocá-la no próximo acesso | `204` |
 | `POST /api/usuarios/{id}/bloquear` | ATIVO → BLOQUEADO | `200` `Usuario` |
 | `POST /api/usuarios/{id}/desbloquear` | BLOQUEADO → ATIVO | `200` `Usuario` |
-| `DELETE /api/usuarios/{id}` | ATIVO ou BLOQUEADO → EXCLUIDO (lixeira), **só para quem nunca criou transferências** (`emUso = false`). Com transferências, responde `409` e orienta a bloquear | `200` `Usuario` |
+| `DELETE /api/usuarios/{id}` | ATIVO ou BLOQUEADO → EXCLUIDO (lixeira), **só para quem nunca registrou transferências nem saídas de materiais** (`emUso = false`). Com registros, responde `409` e orienta a bloquear | `200` `Usuario` |
 | `POST /api/usuarios/{id}/restaurar` | EXCLUIDO → ATIVO | `200` `Usuario` |
 
 Corpo de `POST` (o `PUT` usa o mesmo corpo, sem `senha`):
@@ -149,7 +149,7 @@ Todos os perfis consultam. Só ADMIN e SUPERADMIN alteram.
 | `GET /api/instituicoes/{id}` | Detalhe | todos | `200` `Instituicao` |
 | `POST /api/instituicoes` | Cria `{ "nome": "IEL" }` | ADMIN | `201` `Instituicao` |
 | `PUT /api/instituicoes/{id}` | Renomeia `{ "nome": "..." }` | ADMIN | `200` `Instituicao` |
-| `DELETE /api/instituicoes/{id}` | Exclui, **só se a instituição nunca foi usada** (`emUso = false`). Os vínculos com unidades são removidos junto. Se houver transferências, responde `409` e orienta a bloquear | ADMIN | `204` |
+| `DELETE /api/instituicoes/{id}` | Exclui, **só se a instituição nunca foi usada** (`emUso = false`). Os vínculos com unidades são removidos junto. Se houver transferências ou saídas de materiais, responde `409` e orienta a bloquear | ADMIN | `204` |
 | `POST /api/instituicoes/{id}/bloquear` | Bloqueia para novas transferências. O histórico, os filtros e os termos continuam funcionando | ADMIN | `200` `Instituicao` |
 | `POST /api/instituicoes/{id}/desbloquear` | Volta a permitir novas transferências | ADMIN | `200` `Instituicao` |
 | `GET /api/instituicoes/{id}/logo` | A imagem da logo. **Público, sem token**, para usar direto em `<img src>`. `404` se não houver logo | — | `200` `image/png` ou `image/jpeg` |
@@ -162,7 +162,7 @@ Todos os perfis consultam. Só ADMIN e SUPERADMIN alteram.
 
 - `logoUrl` vem `null` quando a instituição não tem logo. A logo é impressa no termo em PDF.
 - `ativa`: `false` significa bloqueada para novas transferências.
-- `emUso`: indica que a instituição já foi usada em transferências; nesse caso não pode ser excluída, só bloqueada (D-033).
+- `emUso`: indica que a instituição já foi usada em transferências ou saídas de materiais; nesse caso não pode ser excluída, só bloqueada (D-033).
 
 Exemplo de envio da logo:
 
@@ -178,7 +178,7 @@ curl -X PUT localhost:8080/api/instituicoes/1/logo -H "Authorization: Bearer $TO
 | `GET /api/unidades/{id}` | Detalhe | todos | `200` `Unidade` |
 | `POST /api/unidades` | Cria | ADMIN | `201` `Unidade` |
 | `PUT /api/unidades/{id}` | Altera o nome e as instituições | ADMIN | `200` `Unidade` |
-| `DELETE /api/unidades/{id}` | Exclui, **só se a unidade nunca foi usada** (`emUso = false`). Se for origem ou destino de alguma transferência, responde `409` e orienta a bloquear | ADMIN | `204` |
+| `DELETE /api/unidades/{id}` | Exclui, **só se a unidade nunca foi usada** (`emUso = false`). Se for origem ou destino de alguma transferência ou saída de materiais, responde `409` e orienta a bloquear | ADMIN | `204` |
 | `POST /api/unidades/{id}/bloquear` | Bloqueia para novas transferências. O histórico, os filtros e os termos continuam funcionando | ADMIN | `200` `Unidade` |
 | `POST /api/unidades/{id}/desbloquear` | Volta a permitir novas transferências | ADMIN | `200` `Unidade` |
 | `GET /api/unidades/{id}/imagem` | A foto da unidade (JPEG). **Público, sem token**, para usar direto em `<img src>`. `404` se não houver foto | — | `200` `image/jpeg` |
@@ -198,7 +198,7 @@ A resposta tem o formato `{ "id": 17, "nome": "SESI LAGARTO", "imagemUrl": "/api
 
 ## Motivos: `GET /api/motivos` (todos os perfis)
 
-São fixos, porque definem os quadros do termo impresso (ver [D-007](decisoes.md)).
+Lista os motivos de transferência. São fixos, porque definem os quadros do termo impresso (ver [D-007](decisoes.md)).
 
 ```json
 [{ "codigo": "TRANSFERENCIA_ENTRE_FILIAIS", "descricao": "Transferência entre filiais", "tipo": "DEFINITIVA" }, ...]
@@ -320,6 +320,70 @@ Uma transferência na lixeira só é visível (detalhe, restaurar, excluir) para
 
 ---
 
+## Saídas de materiais: `/api/saidas`
+
+Controle de Saída de Materiais da Unidade (formulário FM-072-UOP-04). As permissões, a lixeira e a sincronização de itens funcionam como nas transferências.
+
+| Método e caminho | O que faz | Perfil mínimo | Resposta |
+|---|---|---|---|
+| `GET /api/saidas` | Lista as saídas fora da lixeira. Filtros: `busca`, `instituicaoId`, `origemId`, `destinoId`, `tipo`, `criadoPorId`, `dataInicial`, `dataFinal`, `minhas`. Ordem padrão: número decrescente | LEITOR | `200` página de `SaidaResumo` |
+| `GET /api/saidas/autores` | Quem já registrou saídas (opções do filtro) | LEITOR | `200` `[{id, nome}]` |
+| `GET /api/saidas/{id}` | Detalhe com os itens | LEITOR | `200` `SaidaDetalhe` |
+| `GET /api/saidas/{id}/formulario` | Formulário em PDF, idêntico ao FM-072-UOP-04 em papel (Carta paisagem); `download=true` força o download | LEITOR | `200` `application/pdf` |
+| `POST /api/saidas` | Registra | TECNICO | `201` `SaidaDetalhe` |
+| `PUT /api/saidas/{id}` | Edita (só fora da lixeira) | TECNICO (autor) / ADMIN | `200` `SaidaDetalhe` |
+| `DELETE /api/saidas/{id}` | Move para a lixeira, com os itens | TECNICO (autor) / ADMIN | `204` |
+| `GET /api/saidas/lixeira` | Lixeira (TECNICO: as próprias; ADMIN: todas) | TECNICO | `200` página de `SaidaResumo` |
+| `POST /api/saidas/{id}/restaurar` | Tira da lixeira | TECNICO (autor) / ADMIN | `204` |
+| `DELETE /api/saidas/{id}/definitivo` | Exclui de forma permanente a saída e os itens, **apenas se estiver na lixeira** | TECNICO (autor) / ADMIN | `204` |
+
+**Busca textual (`busca`):** número, origem, destino (unidade ou externo), instituição, autor, portador, tipo ("manutenção", "evento"…) e, nos itens, descrição, áreas de saída e entrada e observação. Os itens desta modalidade não têm patrimônio.
+
+### Corpo de `POST` e `PUT`
+
+```json
+{
+  "data": "2026-10-07",
+  "tipo": "MANUTENCAO",
+  "tipoOutro": null,
+  "instituicaoId": 2,
+  "origemId": 1,
+  "destinoId": null,
+  "destinoExterno": "Assistência Técnica XYZ",
+  "portador": "joão da silva",
+  "itens": [
+    { "descricao": "projetor epson", "areaSaida": "laboratório 16",
+      "areaEntrada": "auditório", "observacao": "Retorno previsto em 15/10/2026" },
+    { "id": 812, "descricao": "Cabo HDMI" }
+  ]
+}
+```
+
+- **Destino:** `destinoId` (unidade da mesma instituição) **ou** `destinoExterno` (texto), nunca os dois e nunca nenhum (`422`).
+- **Tipo:** `tipo = OUTRO` exige `tipoOutro` (`422`); nos demais tipos, `tipoOutro` é descartado.
+- **Unidades e instituição:** a origem e a unidade de destino devem pertencer à instituição. Bloqueadas só são aceitas se já eram as da saída (edição do histórico).
+- **Normalização:** o portador fica com iniciais maiúsculas; descrição e áreas, com a primeira letra maiúscula.
+- **Itens:** de 1 a 500. Com `id` são atualizados, sem `id` são criados, e os ausentes são removidos. A ordem da lista define a numeração.
+
+### Objetos de resposta
+
+`SaidaResumo`: `id`, `data`, `tipo`, `tipoOutro`, `instituicao {id, nome}`, `origem {id, nome, imagemUrl}`, `destino {id, nome, imagemUrl} | null`, `destinoExterno`, `nomeDestino` (a unidade ou o externo, para exibir), `portador`, `criadoPor {id, nome}`, `quantidadeItens`, `criadoEm`, `excluidoEm`.
+
+`SaidaDetalhe`: os mesmos campos (sem `quantidadeItens`), mais `itens [{id, ordem, descricao, areaSaida, areaEntrada, observacao}]`, `atualizadoEm` e `podeAlterar`.
+
+### Formulário em PDF
+
+Reproduz o FM-072-UOP-04 em papel (ver D-046): Carta paisagem, DejaVu Sans Condensed 10 pt e DejaVu Sans Bold nos títulos, com as posições medidas no PDF original.
+- **Cabeçalho, repetido em cada página:**
+  - Logo da instituição e o título.
+  - DATA, DE e PARA sobre linhas de preenchimento.
+  - Os tipos com caixas, com o "X" no escolhido, e "OUTRO, QUAL:" com o texto informado.
+- **Itens:** colunas Item, Descrição do material, Área de saída, Área de entrada e Observação, com as larguras do original. São no mínimo 4 linhas, completadas em branco, e o cabeçalho da tabela se repete nas páginas seguintes. As datas da observação não se partem entre linhas.
+- **Assinaturas, logo após o último item e sem se dividir entre páginas:**
+  - Nome do portador sobre a linha de assinatura.
+  - "Liberei…" e "Recebi…", cada um com "Ciente" e "Responsável da UOP".
+- **Rodapé de cada página:** "FM-072-UOP-04" e, em letra pequena, "Saída nº X · página n de m".
+
 ## Painel de análise: `GET /api/painel` (todos os perfis)
 
 Agregados para o painel. Considera só transferências **fora da lixeira**, pela data da transferência.
@@ -352,3 +416,31 @@ Resposta (resumida):
 - **`porMotivo`:** traz sempre os quatro motivos, na ordem do sistema.
 - **Rankings:** origens, destinos e emissores trazem os 8 primeiros; rotas e bens, os 10 primeiros.
 - **`bensMaisTransferidos`:** agrupa as descrições sem diferenciar maiúsculas e espaços, e exibe a grafia mais frequente.
+
+## Painel de saídas de materiais: `GET /api/painel/saidas` (todos os perfis)
+
+Agregados para o painel de saídas de materiais. Tem os mesmos parâmetros e regras do painel de transferências, aplicados ao Controle de Saída de Materiais (saídas **fora da lixeira**, pela data da saída).
+
+Resposta (resumida):
+
+```json
+{
+  "periodo": { "inicio": "2025-11-01", "fim": "2026-10-07" },
+  "periodoAnterior": { "inicio": "2024-11-25", "fim": "2025-10-31" },
+  "resumo": { "saidas": 12, "itens": 47, "paraDestinoExterno": 5, "unidadesEnvolvidas": 6,
+              "saidasAnterior": 0, "itensAnterior": 0 },
+  "porMes": [{ "mes": "2025-11", "saidas": 0, "itens": 0 }, ...],
+  "porTipo": [{ "tipo": "PERMANENTE", "descricao": "Permanente", "saidas": 3, "itens": 10 }, ...],
+  "porInstituicao": [{ "id": 2, "nome": "SENAI", "saidas": 7, "itens": 30 }, ...],
+  "principaisOrigens": [{ "id": 1, "nome": "SEDE", "saidas": 6, "itens": 25 }, ...],
+  "principaisDestinos": [{ "nome": "Assistência Técnica XYZ", "externo": true, "saidas": 3, "itens": 9 }, ...],
+  "principaisRotas": [{ "origem": "SEDE", "destino": "Assistência Técnica XYZ", "destinoExterno": true, "saidas": 3, "itens": 9 }, ...],
+  "principaisEmissores": [...],
+  "materiaisMaisFrequentes": [{ "descricao": "Projetor Epson", "itens": 8, "saidas": 2 }, ...]
+}
+```
+
+- **`paraDestinoExterno`:** quantas saídas do período foram para um destino externo. `unidadesEnvolvidas` conta só unidades cadastradas.
+- **`porTipo`:** traz sempre os cinco tipos, na ordem do formulário.
+- **`principaisDestinos` e `principaisRotas`:** unidades e destinos externos no mesmo ranking. O destino externo é agrupado pelo texto sem diferenciar maiúsculas e espaços, e exibe a grafia mais frequente.
+- **Rankings:** origens, destinos e emissores trazem os 8 primeiros; rotas e materiais, os 10 primeiros.

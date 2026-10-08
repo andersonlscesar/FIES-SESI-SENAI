@@ -27,6 +27,7 @@ import {
   IconLogout,
   IconMoon,
   IconSun,
+  IconPackageExport,
   IconTrash,
   IconUsers,
 } from '@tabler/icons-react'
@@ -56,6 +57,8 @@ const MENU: { titulo: string; itens: ItemMenu[] }[] = [
       { rotulo: 'Painel', para: '/painel', icone: <IconChartBar {...ICONE} />, perfil: 'LEITOR' },
       { rotulo: 'Transferências', para: '/transferencias', icone: <IconListDetails {...ICONE} />, perfil: 'LEITOR', exato: true },
       { rotulo: 'Nova transferência', para: '/transferencias/nova', icone: <IconFilePlus {...ICONE} />, perfil: 'TECNICO' },
+      { rotulo: 'Saídas de materiais', para: '/saidas', icone: <IconPackageExport {...ICONE} />, perfil: 'LEITOR', exato: true },
+      { rotulo: 'Nova saída', para: '/saidas/nova', icone: <IconFilePlus {...ICONE} />, perfil: 'TECNICO' },
       { rotulo: 'Lixeira', para: '/transferencias/lixeira', icone: <IconTrash {...ICONE} />, perfil: 'TECNICO' },
     ],
   },

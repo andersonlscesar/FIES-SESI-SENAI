@@ -53,7 +53,7 @@ export function Instituicoes() {
   const excluir = (i: Instituicao) =>
     modals.openConfirmModal({
       title: `Excluir a instituição ${i.nome}?`,
-      children: <Text size="sm">Ela nunca foi usada em transferências. Os vínculos com unidades serão removidos.</Text>,
+      children: <Text size="sm">Ela nunca foi usada em transferências nem em saídas de materiais. Os vínculos com unidades serão removidos.</Text>,
       labels: { confirm: 'Excluir', cancel: 'Cancelar' },
       confirmProps: { color: 'red' },
       onConfirm: () => executar(() => cadastrosApi.excluirInstituicao(i.id), 'Instituição excluída.'),
@@ -103,7 +103,7 @@ export function Instituicoes() {
                   </Table.Td>
                   <Table.Td>
                     <Text size="sm" c="dimmed">
-                      {i.emUso ? 'Possui transferências' : 'Sem transferências'}
+                      {i.emUso ? 'Possui movimentações' : 'Sem movimentações'}
                     </Text>
                   </Table.Td>
                   <Table.Td>
@@ -130,7 +130,7 @@ export function Instituicoes() {
                           </Menu.Item>
                         )}
                         <Menu.Divider />
-                        <Tooltip label="Já usada em transferências: bloqueie em vez de excluir" disabled={!i.emUso} position="left">
+                        <Tooltip label="Já usada em transferências ou saídas de materiais: bloqueie em vez de excluir" disabled={!i.emUso} position="left">
                           <Box>
                             <Menu.Item color="red" leftSection={<IconTrash size={16} />} disabled={i.emUso} onClick={() => excluir(i)}>
                               Excluir

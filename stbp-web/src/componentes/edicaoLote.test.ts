@@ -40,8 +40,20 @@ describe('aplicarEmLote', () => {
   })
 
   it('marca como sem patrimônio e troca a descrição', () => {
-    const resultado = aplicarEmLote(itens, new Set(['a']), { descricao: ' Notebook Dell ', patrimonio: { modo: 'sp' } })
+    const resultado = aplicarEmLote(itens, new Set(['a']), { textos: { descricao: ' Notebook Dell ' }, patrimonio: { modo: 'sp' } })
     expect(resultado[0]).toMatchObject({ descricao: 'Notebook Dell', patrimonio: 'S/P' })
+  })
+
+  it('preenche as áreas de saída e entrada (controle de saída)', () => {
+    const comAreas = itens.map((i) => ({ ...i, areaSaida: '', areaEntrada: 'Sala 2' }))
+    const resultado = aplicarEmLote(comAreas, new Set(['a', 'b']), { textos: { areaSaida: 'Lab. 16', areaEntrada: '' } })
+    expect(resultado.map((i) => [i.areaSaida, i.areaEntrada])).toEqual([
+      ['Lab. 16', ''],
+      ['Lab. 16', ''],
+      ['', 'Sala 2'],
+      ['', 'Sala 2'],
+    ])
+    expect(resultado[2]).toBe(comAreas[2])
   })
 
   it('recusa sequência que não termina em número', () => {
